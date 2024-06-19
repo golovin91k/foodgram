@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class UsersShopcartFavoriteConfig(AppConfig):
+class ApiConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'users_shopcart_favorite'
+    name = 'api'

@@ -1,6 +1,6 @@
 from django.db import models
 
-from users_shopcart_favorite.models import UserProfile
+#from users_shopcart_favorite import models as model
 
 
 class Ingredient(models.Model):
@@ -15,8 +15,7 @@ class Tag(models.Model):
 
 class Recipe(models.Model):
     tags = models.ManyToManyField(Tag)
-    author = models.ForeignKey(
-        UserProfile, on_delete=models.CASCADE)
+    #author = models.ForeignKey(User, on_delete=models.CASCADE)
     ingredients = models.ManyToManyField(
         Ingredient, through='IngredientinRecipe')
     name = models.CharField(max_length=256)
