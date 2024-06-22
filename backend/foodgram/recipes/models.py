@@ -1,6 +1,8 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 
-#from users_shopcart_favorite import models as model
+
+User = get_user_model()
 
 
 class Ingredient(models.Model):
@@ -15,7 +17,7 @@ class Tag(models.Model):
 
 class Recipe(models.Model):
     tags = models.ManyToManyField(Tag)
-    #author = models.ForeignKey(User, on_delete=models.CASCADE)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
     ingredients = models.ManyToManyField(
         Ingredient, through='IngredientinRecipe')
     name = models.CharField(max_length=256)
@@ -28,3 +30,14 @@ class IngredientinRecipe(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     amount = models.IntegerField()
+
+
+class UserRecipe(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, )
+    recipes = models.ForeignKey(Recipe, on_delete=models.SET_NULL, blank=True,
+                                null=True, related_name='user_recipes')
+    recipes_count = models.IntegerField()
+    favorite_recipes = models.ManyToManyField(
+        Recipe, blank=True, related_name='user_favorite_recipes')
+    shopping_cart = models.ManyToManyField(
+        Recipe, blank=True, related_name='user_shopping_cart')
