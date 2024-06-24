@@ -5,12 +5,13 @@ from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import action
 from djoser.conf import settings
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 
-from .serializers import CustomUserCreateSerializer, CustomUserSerializer, AvatarSerializer
+from .serializers import CustomUserCreateSerializer, CustomUserSerializer, AvatarSerializer, Base64ImageField
 
 User = get_user_model()
 
@@ -58,13 +59,21 @@ class CustomUserViewSet(UserViewSet):
         print(self.action)
         if self.action in ('create',):
             return CustomUserCreateSerializer
+        if self.action == 'avatar':
+            return AvatarSerializer
         return CustomUserSerializer
 
+    @action(methods=['put', 'delete'], detail=False, url_path='avatar')
+    def avatar(self, request):
+        if request.method == 'PUT':
+            serializer = AvatarSerializer(data=request.data, instance=request.user)
+            if serializer.is_valid():
+                serializer.save(validated_data=request.data, instance=request.user)
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class AvatarViewSet(mixins.UpdateModelMixin,
-                    mixins.DestroyModelMixin,
-                    viewsets.GenericViewSet):
-    serializer_class = AvatarSerializer
-    queryset = User.objects.all()
-    http_method_names = ['put', 'delete',]
+        if request.method == 'DELETE':
+            request.user.avatar.delete()
+            return Response('Avatar is deleted')
+
 
