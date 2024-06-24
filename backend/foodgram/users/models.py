@@ -3,22 +3,18 @@ from django.db import models
 
 
 class MyUser(AbstractUser):
-    avatar = models.ImageField(blank=True, null=True)
-    subscriptions = models.ManyToManyField(
-        'self', related_name='followers', symmetrical=False, blank=True)
+    email = models.EmailField(unique=True, blank=False)
+    avatar = models.ImageField(
+        upload_to='users', null=True, default=None)
+    username = models.CharField(max_length=150, unique=True)
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['first_name', 'last_name', 'password', 'username']
+#    subscriptions = models.ManyToManyField(
+#        'self', related_name='followers', symmetrical=False, blank=True)
 
 
-"""
-
-    recipes = models.ForeignKey(Recipe, on_delete=models.SET_NULL, blank=True, null=True)
-    recipes_count = models.IntegerField()
-    favorite_recipes = models.ManyToManyField(Recipe, blank=True, null=True)
-    shopping_cart = models.ManyToManyField(Recipe, blank=True, null=True)
-
-
-class UserShopCart(models.Model):
+class UserSubscriber(models.Model):
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE)
-    recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE)
-"""
+        MyUser, on_delete=models.CASCADE, related_name="following")
+    subscriber = models.ForeignKey(
+        MyUser, on_delete=models.CASCADE, related_name="followers")
