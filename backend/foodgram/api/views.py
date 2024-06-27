@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from .serializers import (CustomUserCreateSerializer,
                           CustomUserSerializer, RecipeCreateSerializer,
                           RecipeGetSerializer)
-from recipes.models import Recipe
+from recipes.models import Recipe, Ingredient
 
 
 User = get_user_model()
@@ -91,9 +91,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         print('VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV RECIPE METHOD', self.action)
-        if self.action in ('create',):
+        if self.action in ('create', 'partial_update'):
             return RecipeCreateSerializer
         return RecipeGetSerializer
+    
 
     # def perform_create(self, serializer):
        # serializer.save(author=self.request.user)

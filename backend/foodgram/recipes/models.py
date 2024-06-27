@@ -17,8 +17,11 @@ class Ingredient(models.Model):
 
 class Recipe(models.Model):
     tags = models.ManyToManyField(Tag)
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recipes')
-    ingredients = models.ManyToManyField(Ingredient, through='IngredientInRecipe', through_fields=('recipe', 'ingredient'), related_name='recipes')
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='recipes')
+    ingredients = models.ManyToManyField(Ingredient, through='IngredientInRecipe',
+                                         through_fields=('recipe', 'ingredient'),
+                                         related_name='ingredients')
     name = models.CharField(max_length=256)
     image = models.ImageField(upload_to='recipes/images')
     text = models.TextField()
@@ -26,16 +29,10 @@ class Recipe(models.Model):
 
 
 class IngredientInRecipe(models.Model):
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='ingredients_in_recipe')
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.CASCADE, related_name='recipes')
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE, related_name='in22gredient')
     amount = models.IntegerField()
-
-
-
-
-
-
-
 
 
 """

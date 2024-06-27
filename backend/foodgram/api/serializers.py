@@ -62,14 +62,16 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class IngredientInRecipeGetSerializer(serializers.ModelSerializer):
-    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
-    name = serializers.CharField(source="ingredients.name", read_only=True)
+   # id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
+    id = serializers.IntegerField(source="ingredient.id")
+    name = serializers.CharField(source="ingredient.name", read_only=True)
     measurement_unit = serializers.CharField(
-        source="ingredients.measurement_unit", read_only=True)
+        source="ingredient.measurement_unit", read_only=True)
     
     class Meta:
         model = IngredientInRecipe
         fields = ["id", "name", "measurement_unit", "amount"]
+
 
 
 class IngredientInRecipeCreateSerializer(serializers.ModelSerializer):
@@ -92,11 +94,11 @@ class RecipeGetSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     image = Base64ImageField()
     author = CustomUserSerializer(read_only=True)
-    ingredients_set = IngredientInRecipeGetSerializer(many=True,)
+    ingredients = IngredientInRecipeGetSerializer(many=True, read_only=True, source='recipes')
 
     class Meta:
         model = Recipe
-        fields = ('ingredients_set', 'author', 'image', 'tags')
+        fields = '__all__'
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
@@ -117,14 +119,15 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
         recipe.save()
-        for ingredient_1 in ingredients:
+        for ingredient_obj in ingredients:
             obj = IngredientInRecipe.objects.create(recipe=recipe,
                                                     ingredient=Ingredient.objects.get(
-                                                        id=ingredient_1['id']),
-                                                    amount=ingredient_1['amount'])
+                                                        id=ingredient_obj['id']),
+                                                    amount=ingredient_obj['amount'])
             obj.save
-        print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', recipe.ingredients.all())
         return recipe
+
+
 
 
     def to_representation(self, instance):
