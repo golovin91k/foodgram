@@ -88,7 +88,8 @@ class CustomUserViewSet(UserViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = [AllowAny,]
-    http_method_names = ['get', 'post', 'patch', 'delete', 'list', 'retrieve']
+    http_method_names = ['get', 'post', 'patch',
+                         'delete', 'list', 'retrieve',]
 
     def get_serializer_class(self):
         print('VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV RECIPE METHOD', self.action)
@@ -96,7 +97,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.action in ('create', 'partial_update'):
             return RecipeCreateSerializer
         return RecipeGetSerializer
-    
 
     # def perform_create(self, serializer):
        # serializer.save(author=self.request.user)
