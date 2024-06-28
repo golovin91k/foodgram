@@ -4,7 +4,6 @@ from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
-from django.db import transaction
 from recipes.models import Recipe, Tag, Ingredient, IngredientInRecipe
 
 User = get_user_model()
@@ -67,11 +66,10 @@ class IngredientInRecipeGetSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source="ingredient.name", read_only=True)
     measurement_unit = serializers.CharField(
         source="ingredient.measurement_unit", read_only=True)
-    
+
     class Meta:
         model = IngredientInRecipe
         fields = ["id", "name", "measurement_unit", "amount"]
-
 
 
 class IngredientInRecipeCreateSerializer(serializers.ModelSerializer):
@@ -82,7 +80,7 @@ class IngredientInRecipeCreateSerializer(serializers.ModelSerializer):
         model = IngredientInRecipe
         fields = ('id', 'amount')
 
- 
+
 class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -94,7 +92,8 @@ class RecipeGetSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     image = Base64ImageField()
     author = CustomUserSerializer(read_only=True)
-    ingredients = IngredientInRecipeGetSerializer(many=True, read_only=True, source='recipes')
+    ingredients = IngredientInRecipeGetSerializer(
+        many=True, read_only=True, source='recipes')
 
     class Meta:
         model = Recipe
@@ -127,9 +126,5 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             obj.save
         return recipe
 
-
-
-
     def to_representation(self, instance):
         return RecipeGetSerializer(instance, context=self.context).data
-

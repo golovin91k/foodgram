@@ -3,12 +3,13 @@ from rest_framework import mixins, viewsets
 from djoser.views import UserViewSet
 from djoser.conf import settings
 from rest_framework import mixins, viewsets
-from rest_framework.permissions import AllowAny
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.decorators import action
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
+from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+
 
 from .serializers import (CustomUserCreateSerializer,
                           CustomUserSerializer, RecipeCreateSerializer,
@@ -91,6 +92,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         print('VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV RECIPE METHOD', self.action)
+        print(type(self.request.path))
         if self.action in ('create', 'partial_update'):
             return RecipeCreateSerializer
         return RecipeGetSerializer
