@@ -4,7 +4,9 @@ from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
-from recipes.models import Recipe, Tag, Ingredient, IngredientInRecipe
+
+from recipes.models import Recipe, Tag, Ingredient, IngredientInRecipe, FavoriteRecipe
+
 
 User = get_user_model()
 
@@ -127,7 +129,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        print(validated_data)
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
         instance.name = validated_data.get('name', instance.name)
@@ -145,3 +146,14 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         return RecipeGetSerializer(instance, context=self.context).data
+
+
+class FavoriteRecipeSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    image = serializers.CharField()
+    cooking_time = serializers.IntegerField()
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time',)

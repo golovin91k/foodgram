@@ -1,4 +1,8 @@
+import csv
+
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponse
 from rest_framework import mixins, viewsets
 from djoser.views import UserViewSet
 from djoser.conf import settings
@@ -13,8 +17,8 @@ from rest_framework.response import Response
 
 from .serializers import (CustomUserCreateSerializer,
                           CustomUserSerializer, RecipeCreateSerializer,
-                          RecipeGetSerializer)
-from recipes.models import Recipe, Ingredient
+                          RecipeGetSerializer, FavoriteRecipeSerializer)
+from recipes.models import Recipe, Ingredient, FavoriteRecipe, ShoppingCart, IngredientInRecipe
 
 
 User = get_user_model()
@@ -92,21 +96,62 @@ class RecipeViewSet(viewsets.ModelViewSet):
                          'delete', 'list', 'retrieve',]
 
     def get_serializer_class(self):
-        print('VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV RECIPE METHOD', self.action)
-        print(type(self.request.path))
         if self.action in ('create', 'partial_update'):
             return RecipeCreateSerializer
         return RecipeGetSerializer
 
-    # def perform_create(self, serializer):
-       # serializer.save(author=self.request.user)
+    @action(detail=True, methods=['post', 'delete'])
+    def favorite(self, request, pk=None):
+        if request.method == 'POST':
+            serializer = FavoriteRecipeSerializer(data=request.data)
+            if serializer.is_valid():
+                recipe = Recipe.objects.get(id=pk)
+                user = self.request.user
+                FavoriteRecipe.objects.get_or_create(recipe=recipe, user=user)
+                return Response({'status': 'Рецепт добавлен в избранное'})
+        if request.method == 'DELETE':
+            try:
+                obj = FavoriteRecipe.objects.get(recipe=pk, user=self.request.user)
+                obj.delete()
+                return Response({'status': 'Рецепт удален из избранного'})
+            except ObjectDoesNotExist:
+                return Response({'status': 'Этого рецепта нет в избранном'})
 
+    @action(detail=True, methods=['post', 'delete'])
+    def shopping_cart(self, request, pk=None):
+        if request.method == 'POST':
+            serializer = FavoriteRecipeSerializer(data=request.data)
+            if serializer.is_valid():
+                recipe = Recipe.objects.get(id=pk)
+                ShoppingCart.objects.get_or_create(recipe=recipe, user=self.request.user)
+                """
+     
+                """
+                return Response({'status': 'Рецепт добавлен в список покупок'})
+        if request.method == 'DELETE':
+            try:
+                obj = ShoppingCart.objects.get(recipe=pk, user=self.request.user)
+                obj.delete()
+                return Response({'status': 'Рецепт удален из списка покупок'})
+            except ObjectDoesNotExist:
+                return Response({'status': 'Этого рецепта нет в списке покупок'})
 
-"""
-    @action(["post"], detail=False)
-    def set_password(self, request):
-        serializer = SetPasswordSerializer(data=request.data, instance=request.user)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save(validated_data=request.data, instance=request.user)
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)"""
+    @action(detail=False, methods=['get',])
+    def download_shopping_cart(self, request,):
+        recipes_in_user_shopping_cart = ShoppingCart.objects.filter(user=self.request.user)
+        shopping_cart = {}
+        for single_recipe in recipes_in_user_shopping_cart:
+            ingredients_in_single_recipe = single_recipe.recipe.ingredients.all()
+            for single_ingredient in ingredients_in_single_recipe:
+                ingredientinrecipe_obj = IngredientInRecipe.objects.get(recipe=single_recipe.recipe, ingredient=single_ingredient)
+                print(single_ingredient.name)
+                if (single_ingredient.name + ', ' + single_ingredient.measurement_unit) in shopping_cart.keys():
+                    shopping_cart[single_ingredient.name + ', ' + single_ingredient.measurement_unit] += ingredientinrecipe_obj.amount
+                else:
+                    shopping_cart[single_ingredient.name + ', ' + single_ingredient.measurement_unit] = ingredientinrecipe_obj.amount
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="export.csv"'
+        writer = csv.writer(response)
+        for ingredient in shopping_cart.items():
+            writer.writerow(ingredient)
+        return response
