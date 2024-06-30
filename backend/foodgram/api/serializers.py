@@ -5,10 +5,14 @@ from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 
-from recipes.models import Recipe, Tag, Ingredient, IngredientInRecipe, FavoriteRecipe
+from recipes.models import Recipe, Tag, Ingredient, IngredientInRecipe, FavoriteRecipe, Subscription
 
 
 User = get_user_model()
+
+"""
+Вспомогательный сериализатор указан ниже:
+"""
 
 
 class Base64ImageField(serializers.ImageField):
@@ -157,3 +161,16 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time',)
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    recipes = FavoriteRecipeSerializer(many=True)
+    recipes_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ('email', 'id', 'username', 'first_name',
+                  'last_name', 'avatar', 'recipes', 'recipes_count')
+
+    def get_recipes_count(self, obj):
+        return len(obj.recipes.all())

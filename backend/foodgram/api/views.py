@@ -16,9 +16,11 @@ from rest_framework.response import Response
 
 
 from .serializers import (CustomUserCreateSerializer,
-                          CustomUserSerializer, RecipeCreateSerializer,
-                          RecipeGetSerializer, FavoriteRecipeSerializer)
-from recipes.models import Recipe, Ingredient, FavoriteRecipe, ShoppingCart, IngredientInRecipe
+                          CustomUserSerializer, AvatarSerializer,
+                          RecipeCreateSerializer, RecipeGetSerializer,
+                          FavoriteRecipeSerializer, SubscriptionSerializer)
+from recipes.models import (Recipe, Ingredient, FavoriteRecipe,
+                            ShoppingCart, IngredientInRecipe, Subscription)
 
 
 User = get_user_model()
@@ -88,6 +90,40 @@ class CustomUserViewSet(UserViewSet):
             request.user.avatar.delete()
             return Response('Avatar is deleted')
 
+    @action(methods=['post', 'delete'], detail=True, url_path='subscribe')
+    def subscribe(self, request, **kwargs):
+        if request.method == 'POST':
+            author = User.objects.get(id=kwargs['id'])
+            subscriber = User.objects.get(id=self.request.user.id)
+            print('#####################################################')
+            Subscription.objects.get_or_create(
+                author=author, subscriber=subscriber)
+
+            serializer = SubscriptionSerializer(author)
+            return Response(serializer.data)
+
+        if request.method == 'DELETE':
+            author = User.objects.get(id=kwargs['id'])
+            subscriber = User.objects.get(id=self.request.user.id)
+            print('#####################################################')
+            try:
+                obj = Subscription.objects.get(
+                    author=author, subscriber=subscriber)
+                obj.delete()
+                return Response({'status': 'Автор удален из подписок'})
+            except ObjectDoesNotExist:
+                return Response({'status': 'Вы не подписаны на этого автора'})
+
+    @action(methods=['get',], detail=False, url_path='subscriptions')
+    def subscriptions(self, request):
+        user = self.request.user
+        user_subscriptions = user.authors.all()
+        authors = []
+        for single_subscription in user_subscriptions:
+            authors.append(single_subscription.author)
+        serializer = SubscriptionSerializer(authors, many=True)
+        return Response(serializer.data)
+
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
@@ -111,7 +147,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 return Response({'status': 'Рецепт добавлен в избранное'})
         if request.method == 'DELETE':
             try:
-                obj = FavoriteRecipe.objects.get(recipe=pk, user=self.request.user)
+                obj = FavoriteRecipe.objects.get(
+                    recipe=pk, user=self.request.user)
                 obj.delete()
                 return Response({'status': 'Рецепт удален из избранного'})
             except ObjectDoesNotExist:
@@ -123,14 +160,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
             serializer = FavoriteRecipeSerializer(data=request.data)
             if serializer.is_valid():
                 recipe = Recipe.objects.get(id=pk)
-                ShoppingCart.objects.get_or_create(recipe=recipe, user=self.request.user)
-                """
-     
-                """
+                ShoppingCart.objects.get_or_create(
+                    recipe=recipe, user=self.request.user)
                 return Response({'status': 'Рецепт добавлен в список покупок'})
         if request.method == 'DELETE':
             try:
-                obj = ShoppingCart.objects.get(recipe=pk, user=self.request.user)
+                obj = ShoppingCart.objects.get(
+                    recipe=pk, user=self.request.user)
                 obj.delete()
                 return Response({'status': 'Рецепт удален из списка покупок'})
             except ObjectDoesNotExist:
@@ -138,17 +174,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get',])
     def download_shopping_cart(self, request,):
-        recipes_in_user_shopping_cart = ShoppingCart.objects.filter(user=self.request.user)
+        recipes_in_user_shopping_cart = ShoppingCart.objects.filter(
+            user=self.request.user)
         shopping_cart = {}
         for single_recipe in recipes_in_user_shopping_cart:
             ingredients_in_single_recipe = single_recipe.recipe.ingredients.all()
             for single_ingredient in ingredients_in_single_recipe:
-                ingredientinrecipe_obj = IngredientInRecipe.objects.get(recipe=single_recipe.recipe, ingredient=single_ingredient)
+                ingredientinrecipe_obj = IngredientInRecipe.objects.get(
+                    recipe=single_recipe.recipe, ingredient=single_ingredient)
                 print(single_ingredient.name)
                 if (single_ingredient.name + ', ' + single_ingredient.measurement_unit) in shopping_cart.keys():
-                    shopping_cart[single_ingredient.name + ', ' + single_ingredient.measurement_unit] += ingredientinrecipe_obj.amount
+                    shopping_cart[single_ingredient.name + ', '
+                                  + single_ingredient.measurement_unit] += ingredientinrecipe_obj.amount
                 else:
-                    shopping_cart[single_ingredient.name + ', ' + single_ingredient.measurement_unit] = ingredientinrecipe_obj.amount
+                    shopping_cart[single_ingredient.name + ', '
+                                  + single_ingredient.measurement_unit] = ingredientinrecipe_obj.amount
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="export.csv"'
         writer = csv.writer(response)

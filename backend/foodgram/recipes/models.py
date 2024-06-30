@@ -19,7 +19,8 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(Tag)
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='recipes')
-    ingredients = models.ManyToManyField(Ingredient, through='IngredientInRecipe',
+    ingredients = models.ManyToManyField(Ingredient,
+                                         through='IngredientInRecipe',
                                          through_fields=(
                                              'recipe', 'ingredient'),
                                          related_name='ingredients')
@@ -50,14 +51,9 @@ class ShoppingCart(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='shopingcart')
 
-"""
-class UserRecipe(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, )
-    recipes = models.ForeignKey(Recipe, on_delete=models.SET_NULL, blank=True,
-                                null=True, related_name='user_recipes')
-    recipes_count = models.IntegerField()
-    favorite_recipes = models.ManyToManyField(
-        Recipe, blank=True, related_name='user_favorite_recipes')
-    shopping_cart = models.ManyToManyField(
-        Recipe, blank=True, related_name='user_shopping_cart')
-"""
+
+class Subscription(models.Model):
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='subscribers')
+    subscriber = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='authors')
