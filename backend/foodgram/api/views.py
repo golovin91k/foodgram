@@ -18,7 +18,7 @@ from rest_framework.response import Response
 from .serializers import (CustomUserCreateSerializer,
                           CustomUserSerializer, AvatarSerializer,
                           RecipeCreateSerializer, RecipeGetSerializer,
-                          FavoriteRecipeSerializer, SubscriptionSerializer)
+                          FavoriteRecipeSerializer, SetPasswordSerializer, SubscriptionSerializer)
 from recipes.models import (Recipe, Ingredient, FavoriteRecipe,
                             ShoppingCart, IngredientInRecipe, Subscription)
 
@@ -46,6 +46,8 @@ class CustomUserViewSet(UserViewSet):
             return CustomUserCreateSerializer
         elif self.action == 'avatar':
             return AvatarSerializer
+        elif self.action == 'set_password':
+            return SetPasswordSerializer
         # if self.action == 'set_password':
             # return SetPasswordSerializer
         return CustomUserSerializer
@@ -66,12 +68,21 @@ class CustomUserViewSet(UserViewSet):
             request.user.avatar.delete()
             return Response('Avatar is deleted')
 
+    @action(methods=['post',], detail=False, url_path='set_password',
+            permission_classes=[IsAuthenticated],
+            serializer_class=[SetPasswordSerializer,])
+    def set_password(self, request):
+        serializer = SetPasswordSerializer(data=request.data,) #instance=request.user)
+        if serializer.is_valid():
+            serializer.save(validated_data=request.data, instance=request.user)
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     @action(methods=['post', 'delete'], detail=True, url_path='subscribe')
     def subscribe(self, request, **kwargs):
         if request.method == 'POST':
             author = User.objects.get(id=kwargs['id'])
             subscriber = User.objects.get(id=self.request.user.id)
-            print('#####################################################')
             Subscription.objects.get_or_create(
                 author=author, subscriber=subscriber)
 
@@ -81,7 +92,6 @@ class CustomUserViewSet(UserViewSet):
         if request.method == 'DELETE':
             author = User.objects.get(id=kwargs['id'])
             subscriber = User.objects.get(id=self.request.user.id)
-            print('#####################################################')
             try:
                 obj = Subscription.objects.get(
                     author=author, subscriber=subscriber)
