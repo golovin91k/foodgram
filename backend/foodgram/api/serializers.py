@@ -34,6 +34,10 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         model = User
         fields = ("email", "id", "username",
                   "first_name", "last_name", "password")
+        extra_kwargs = {
+            'first_name': {'required': True, 'allow_blank': False},
+            'last_name': {'required': True, 'allow_blank': False},
+        }
 
 
 class CustomUserSerializer(UserSerializer):
@@ -52,6 +56,9 @@ class AvatarSerializer(serializers.Serializer):
         instance.avatar = self.validated_data['avatar']
         instance.save()
         return instance
+
+
+
 
 
 """

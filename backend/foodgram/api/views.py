@@ -6,12 +6,12 @@ from django.http import HttpResponse
 from rest_framework import mixins, viewsets
 from djoser.views import UserViewSet
 from djoser.conf import settings
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, viewsets, status
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 
@@ -32,50 +32,26 @@ class CustomUserViewSet(UserViewSet):
     pagination_class = PageNumberPagination
 
     def get_permissions(self):
-        if self.action == "create":
-            self.permission_classes = settings.PERMISSIONS.user_create
-        elif self.action == "activation":
-            self.permission_classes = settings.PERMISSIONS.activation
-        elif self.action == "resend_activation":
-            self.permission_classes = settings.PERMISSIONS.password_reset
-        elif self.action == "list":
-            self.permission_classes = settings.PERMISSIONS.user_list
-        elif self.action == "reset_password":
-            self.permission_classes = settings.PERMISSIONS.password_reset
-        elif self.action == "reset_password_confirm":
-            self.permission_classes = settings.PERMISSIONS.password_reset_confirm
-        elif self.action == "set_password":
-            self.permission_classes = settings.PERMISSIONS.set_password
-        elif self.action == "set_username":
-            self.permission_classes = settings.PERMISSIONS.set_username
-        elif self.action == "reset_username":
-            self.permission_classes = settings.PERMISSIONS.username_reset
-        elif self.action == "reset_username_confirm":
-            self.permission_classes = settings.PERMISSIONS.username_reset_confirm
-        elif self.action == "me":
-            self.permission_classes = settings.PERMISSIONS.user_delete
-        elif self.action == "destroy" or (
-            self.action == "me" and self.request and self.request.method == "DELETE"
-        ):
-            self.permission_classes = settings.PERMISSIONS.user_delete
+        if self.action == "me":
+            self.permission_classes = settings.PERMISSIONS.me
         return super().get_permissions()
 
     def get_queryset(self):
-        user = self.request.user
         queryset = User.objects.all()
         return queryset
 
     def get_serializer_class(self):
         print(self.action)
-        if self.action in ('create',):
+        if self.action == 'create':
             return CustomUserCreateSerializer
-        if self.action == 'avatar':
+        elif self.action == 'avatar':
             return AvatarSerializer
         # if self.action == 'set_password':
             # return SetPasswordSerializer
         return CustomUserSerializer
 
-    @action(methods=['put', 'delete'], detail=False, url_path='avatar')
+    @action(methods=['put', 'delete'], detail=False, url_path='me/avatar',
+            permission_classes=[IsAuthenticated])
     def avatar(self, request):
         if request.method == 'PUT':
             serializer = AvatarSerializer(
