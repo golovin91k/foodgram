@@ -63,13 +63,11 @@ class SetPasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField()
 
     def save(self, instance, validated_data):
-        if not instance.check_password(validated_data['current_password']):
-            raise serializers.ValidationError(
-                {'current_password': 'Неправильный пароль.'}
-            )
-        instance.set_password(validated_data['new_password'])
-        instance.save()
-        return instance
+        if instance.check_password(validated_data['current_password']):
+            instance.set_password(validated_data['new_password'])
+            instance.save()      
+            return instance
+        raise serializers.ValidationError({'Введен неверный текущий пароль'})
 
 
 

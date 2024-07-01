@@ -72,7 +72,7 @@ class CustomUserViewSet(UserViewSet):
             permission_classes=[IsAuthenticated],
             serializer_class=[SetPasswordSerializer,])
     def set_password(self, request):
-        serializer = SetPasswordSerializer(data=request.data,) #instance=request.user)
+        serializer = SetPasswordSerializer(data=request.data,)
         if serializer.is_valid():
             serializer.save(validated_data=request.data, instance=request.user)
             return Response(serializer.data)
