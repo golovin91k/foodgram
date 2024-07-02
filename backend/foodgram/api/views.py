@@ -49,6 +49,10 @@ class CustomUserViewSet(UserViewSet):
             return SetPasswordSerializer
         return CustomUserSerializer
 
+    def perform_create(self, serializer, *args, **kwargs):
+        serializer.save(*args, **kwargs)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     @action(methods=['put', 'delete'], detail=False, url_path='me/avatar',
             permission_classes=[IsAuthenticated])
     def avatar(self, request):
