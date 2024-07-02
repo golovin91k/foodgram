@@ -41,12 +41,21 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
 
 class CustomUserSerializer(UserSerializer):
-    # is_subscribed = serializers.SerializerMethodField()
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta(UserSerializer.Meta):
         model = User
         fields = ('email', 'id', 'username',
-                  'first_name', 'last_name', 'avatar',)  # 'is_subscribed')
+                  'first_name', 'last_name', 'is_subscribed', 'avatar',)
+
+    def get_is_subscribed(self, obj):
+        current_user = self.context['request'].user
+        if current_user.is_authenticated and current_user != obj:
+            if Subscription.objects.filter(author=obj,
+                                           subscriber=current_user):
+                return True
+            return False
+        return False
 
 
 class AvatarSerializer(serializers.Serializer):
@@ -65,10 +74,9 @@ class SetPasswordSerializer(serializers.Serializer):
     def save(self, instance, validated_data):
         if instance.check_password(validated_data['current_password']):
             instance.set_password(validated_data['new_password'])
-            instance.save()      
+            instance.save()
             return instance
         raise serializers.ValidationError({'Введен неверный текущий пароль'})
-
 
 
 """

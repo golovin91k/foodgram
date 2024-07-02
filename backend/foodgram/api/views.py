@@ -21,7 +21,7 @@ from .serializers import (CustomUserCreateSerializer,
                           FavoriteRecipeSerializer, SetPasswordSerializer, SubscriptionSerializer)
 from recipes.models import (Recipe, Ingredient, FavoriteRecipe,
                             ShoppingCart, IngredientInRecipe, Subscription)
-
+from .pagination import CustomPaginator
 
 User = get_user_model()
 
@@ -29,7 +29,7 @@ User = get_user_model()
 class CustomUserViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
-    pagination_class = PageNumberPagination
+    pagination_class = CustomPaginator
 
     def get_permissions(self):
         if self.action == "me":
@@ -41,15 +41,12 @@ class CustomUserViewSet(UserViewSet):
         return queryset
 
     def get_serializer_class(self):
-        print(self.action)
         if self.action == 'create':
             return CustomUserCreateSerializer
         elif self.action == 'avatar':
             return AvatarSerializer
         elif self.action == 'set_password':
             return SetPasswordSerializer
-        # if self.action == 'set_password':
-            # return SetPasswordSerializer
         return CustomUserSerializer
 
     @action(methods=['put', 'delete'], detail=False, url_path='me/avatar',
@@ -66,7 +63,7 @@ class CustomUserViewSet(UserViewSet):
 
         if request.method == 'DELETE':
             request.user.avatar.delete()
-            return Response('Avatar is deleted')
+            return Response('Avatar is deleted', status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=['post',], detail=False, url_path='set_password',
             permission_classes=[IsAuthenticated],
@@ -75,7 +72,7 @@ class CustomUserViewSet(UserViewSet):
         serializer = SetPasswordSerializer(data=request.data,)
         if serializer.is_valid():
             serializer.save(validated_data=request.data, instance=request.user)
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['post', 'delete'], detail=True, url_path='subscribe')
