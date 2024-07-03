@@ -28,6 +28,10 @@ class Recipe(models.Model):
     image = models.ImageField(upload_to='recipes/images')
     text = models.TextField()
     cooking_time = models.IntegerField()
+    pub_date = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-pub_date']
 
 
 class IngredientInRecipe(models.Model):

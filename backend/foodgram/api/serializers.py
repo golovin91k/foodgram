@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 
-from recipes.models import Recipe, Tag, Ingredient, IngredientInRecipe, FavoriteRecipe, Subscription
+from recipes.models import Recipe, Tag, Ingredient, IngredientInRecipe, FavoriteRecipe, Subscription, ShoppingCart
 
 
 User = get_user_model()
@@ -125,10 +125,35 @@ class RecipeGetSerializer(serializers.ModelSerializer):
     author = CustomUserSerializer(read_only=True)
     ingredients = IngredientInRecipeGetSerializer(
         many=True, read_only=True, source='recipes')
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
-        fields = '__all__'
+        fields = ('id', 'tags',
+                  'author', 'ingredients',
+                  'is_favorited', 'is_in_shopping_cart',
+                  'name', 'image',
+                  'text', 'cooking_time')
+
+
+    def get_is_favorited(self, obj):
+        current_user = self.context['request'].user
+        if current_user.is_authenticated:
+            if FavoriteRecipe.objects.filter(user=current_user, recipe=obj):
+                return True
+            else:
+                return False
+        return False
+
+    def get_is_in_shopping_cart(self, obj):
+        current_user = self.context['request'].user
+        if current_user.is_authenticated:
+            if ShoppingCart.objects.filter(user=current_user, recipe=obj):
+                return True
+            else:
+                return False
+        return False
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):

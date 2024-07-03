@@ -1,5 +1,6 @@
 import csv
 
+from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
@@ -15,13 +16,16 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 
-from .serializers import (CustomUserCreateSerializer,
-                          CustomUserSerializer, AvatarSerializer,
+from .serializers import (CustomUserCreateSerializer, TagSerializer,
+                          CustomUserSerializer, AvatarSerializer, IngredientSerializer,
                           RecipeCreateSerializer, RecipeGetSerializer,
                           FavoriteRecipeSerializer, SetPasswordSerializer, SubscriptionSerializer)
-from recipes.models import (Recipe, Ingredient, FavoriteRecipe,
+from recipes.models import (Recipe, Ingredient, FavoriteRecipe, Tag,
                             ShoppingCart, IngredientInRecipe, Subscription)
 from .pagination import CustomPaginator
+from .permissions import IsOwnerOrReadOnly
+from .filters import IngredientFilter, RecipeFilter
+
 
 User = get_user_model()
 
@@ -114,16 +118,25 @@ class CustomUserViewSet(UserViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    permission_classes = [AllowAny,]
+    permission_classes = (IsOwnerOrReadOnly,)
+    pagination_class = CustomPaginator
     http_method_names = ['get', 'post', 'patch',
                          'delete', 'list', 'retrieve',]
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
 
     def get_serializer_class(self):
         if self.action in ('create', 'partial_update'):
             return RecipeCreateSerializer
         return RecipeGetSerializer
 
-    @action(detail=True, methods=['post', 'delete'])
+   # def create(self, request, *args, **kwargs):
+   #     serializer = self.get_serializer_class()
+   #     super().create(request, *args, **kwargs)
+   #     print('SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS')
+   #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post', 'delete'], permission_classes=(IsAuthenticated,))
     def favorite(self, request, pk=None):
         if request.method == 'POST':
             serializer = FavoriteRecipeSerializer(data=request.data)
@@ -141,7 +154,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             except ObjectDoesNotExist:
                 return Response({'status': 'Этого рецепта нет в избранном'})
 
-    @action(detail=True, methods=['post', 'delete'])
+    @action(detail=True, methods=['post', 'delete'], permission_classes=(IsAuthenticated,))
     def shopping_cart(self, request, pk=None):
         if request.method == 'POST':
             serializer = FavoriteRecipeSerializer(data=request.data)
@@ -182,3 +195,29 @@ class RecipeViewSet(viewsets.ModelViewSet):
         for ingredient in shopping_cart.items():
             writer.writerow(ingredient)
         return response
+
+
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Tag.objects.all()
+    pagination_class = None
+    http_method_names = ['get', 'list', 'retrieve',]
+    serializer_class = TagSerializer
+    permission_classes = [AllowAny]
+    # filter_backends = (DjangoFilterBackend,)
+    # filterset_class = RecipeFilter
+
+
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Ingredient.objects.all()
+    pagination_class = None
+    http_method_names = ['get', 'list', 'retrieve',]
+    serializer_class = IngredientSerializer
+    permission_classes = [AllowAny]
+    search_fields = ('^name',)
+   # filter_backends = (IngredientFilter, DjangoFilterBackend,)
+    filterset_fields = {
+        'name': ['icontains']
+    }
+
+    # filter_backends = (DjangoFilterBackend,)
+    # filterset_class = RecipeFilter
