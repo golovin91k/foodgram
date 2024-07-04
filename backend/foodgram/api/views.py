@@ -86,7 +86,8 @@ class CustomUserViewSet(UserViewSet):
             return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(methods=['post', 'delete'], detail=True, url_path='subscribe')
+    @action(methods=['post', 'delete'], detail=True, url_path='subscribe',
+            permission_classes=[IsAuthenticated])
     def subscribe(self, request, **kwargs):
         if request.method == 'POST':
             author = User.objects.get(id=kwargs['id'])
@@ -95,7 +96,7 @@ class CustomUserViewSet(UserViewSet):
                 author=author, subscriber=subscriber)
 
             serializer = SubscriptionSerializer(author)
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
             author = User.objects.get(id=kwargs['id'])
@@ -108,7 +109,8 @@ class CustomUserViewSet(UserViewSet):
             except ObjectDoesNotExist:
                 return Response({'status': 'Вы не подписаны на этого автора'})
 
-    @action(methods=['get',], detail=False, url_path='subscriptions')
+    @action(methods=['get',], detail=False, url_path='subscriptions',
+            permission_classes=[IsAuthenticated],)
     def subscriptions(self, request):
         user = self.request.user
         user_subscriptions = user.authors.all()
@@ -116,7 +118,8 @@ class CustomUserViewSet(UserViewSet):
         for single_subscription in user_subscriptions:
             authors.append(single_subscription.author)
         serializer = SubscriptionSerializer(authors, many=True)
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
+        #return Response(serializer.data)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -129,15 +132,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     def get_serializer_class(self):
+
         if self.action in ('create', 'partial_update'):
             return RecipeCreateSerializer
         return RecipeGetSerializer
-
-   # def create(self, request, *args, **kwargs):
-   #     serializer = self.get_serializer_class()
-   #     super().create(request, *args, **kwargs)
-   #     print('SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS')
-   #     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post', 'delete'], permission_classes=(IsAuthenticated,))
     def favorite(self, request, pk=None):
