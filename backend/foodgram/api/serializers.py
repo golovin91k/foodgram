@@ -257,11 +257,13 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         return RecipeGetSerializer(instance, context=self.context).data
 
+# FavoriteRecipeSerializer
 
-class FavoriteRecipeSerializer(serializers.ModelSerializer):
+
+class ShortRecipeSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
-    image = serializers.CharField()
+    image = Base64ImageField()
     cooking_time = serializers.IntegerField()
 
     class Meta:
@@ -270,13 +272,41 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-    recipes = FavoriteRecipeSerializer(many=True)
+    recipes = ShortRecipeSerializer(many=True)
+    email = serializers.ReadOnlyField()
+    username = serializers.ReadOnlyField()
+    is_subscribed = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ('email', 'id', 'username', 'first_name',
-                  'last_name', 'avatar', 'recipes', 'recipes_count')
+                  'last_name', 'avatar', 'recipes', 'recipes_count',
+                  'is_subscribed')
+
+    def get_is_subscribed(self, obj):
+       # print('DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD')
+       # print(obj)
+        #print(self.context)
+        current_user = self.context['request'].user
+        if current_user.is_authenticated and current_user != obj:
+            if Subscription.objects.filter(author=obj,
+                                           subscriber=current_user):
+                return True
+            return False
+        return False
+    
+    #def get_recipes(self, obj):
+     #   print('dddd222kfwsiovjeorivjeoriveorivjeorivhjeorinveoirnvoeinr')
+    #    print(obj)
+     #   request = self.context.get('request')
+     #   limit = request.GET.get('recipes_limit')
+     #   queryset = Recipe.objects.filter(author=obj)
+     #   print('3333333333333333333333333333333333333333333333333333333333333')
+     #   print(queryset)
+      #  if limit:
+      ##      queryset = queryset[: int(limit)]
+       # return ShortRecipeSerializer(queryset, many=True).data
 
     def get_recipes_count(self, obj):
         return len(obj.recipes.all())

@@ -22,7 +22,7 @@ from rest_framework.views import APIView
 from .serializers import (CustomUserCreateSerializer, TagSerializer,
                           CustomUserSerializer, AvatarSerializer, IngredientSerializer,
                           RecipeCreateSerializer, RecipeGetSerializer,
-                          FavoriteRecipeSerializer, SetPasswordSerializer, SubscriptionSerializer)
+                          ShortRecipeSerializer, SetPasswordSerializer, SubscriptionSerializer)
 from recipes.models import (Recipe, Ingredient, FavoriteRecipe, Tag, ShortLink,
                             ShoppingCart, IngredientInRecipe, Subscription)
 from .pagination import CustomPaginator
@@ -92,10 +92,13 @@ class CustomUserViewSet(UserViewSet):
         if request.method == 'POST':
             author = User.objects.get(id=kwargs['id'])
             subscriber = User.objects.get(id=self.request.user.id)
+            serializer = SubscriptionSerializer(
+                author, data=request.data, context={"request": request})
+            serializer.is_valid()
+            print(request.data)
             Subscription.objects.get_or_create(
                 author=author, subscriber=subscriber)
-
-            serializer = SubscriptionSerializer(author)
+            # serializer = SubscriptionSerializer(author)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
@@ -110,16 +113,21 @@ class CustomUserViewSet(UserViewSet):
                 return Response({'status': 'Вы не подписаны на этого автора'})
 
     @action(methods=['get',], detail=False, url_path='subscriptions',
-            permission_classes=[IsAuthenticated],)
+            permission_classes=[IsAuthenticated], pagination_class=CustomPaginator)
     def subscriptions(self, request):
         user = self.request.user
         user_subscriptions = user.authors.all()
         authors = []
         for single_subscription in user_subscriptions:
+            #print(single_subscription.author)
             authors.append(single_subscription.author)
-        serializer = SubscriptionSerializer(authors, many=True)
-        return self.get_paginated_response(serializer.data)
-        #return Response(serializer.data)
+        print(authors)
+        serializer = SubscriptionSerializer(authors, data=request.data, context={
+                                            "request": request}, many=True)
+        serializer.is_valid()
+        #print(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        # return Response(serializer.data)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -140,7 +148,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post', 'delete'], permission_classes=(IsAuthenticated,))
     def favorite(self, request, pk=None):
         if request.method == 'POST':
-            serializer = FavoriteRecipeSerializer(data=request.data)
+            serializer = ShortRecipeSerializer(data=request.data)
             if serializer.is_valid():
                 recipe = Recipe.objects.get(id=pk)
                 user = self.request.user
@@ -158,7 +166,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post', 'delete'], permission_classes=(IsAuthenticated,))
     def shopping_cart(self, request, pk=None):
         if request.method == 'POST':
-            serializer = FavoriteRecipeSerializer(data=request.data)
+            serializer = ShortRecipeSerializer(data=request.data)
             if serializer.is_valid():
                 recipe = Recipe.objects.get(id=pk)
                 ShoppingCart.objects.get_or_create(
@@ -213,11 +221,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     http_method_names = ['get', 'list', 'retrieve',]
     serializer_class = TagSerializer
     permission_classes = [AllowAny]
-    # filter_backends = (DjangoFilterBackend,)
-    # filterset_class = RecipeFilter
 
-
-# viewsets.ReadOnlyModelViewSet
 
 class IngredientViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                         viewsets.GenericViewSet):
