@@ -3,6 +3,7 @@ import re
 
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 
@@ -175,6 +176,46 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = ('tags', 'author', 'name', 'image',
                   'text', 'cooking_time', 'ingredients')
+
+    def validate_ingredients(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                'Нужно выбрать хотя бы один ингредиент.'
+            )
+        ingr_list = []
+        for obj in value:
+            try:
+                ingr_obj = Ingredient.objects.get(id=obj['id'])
+                if ingr_obj in ingr_list:
+                    raise serializers.ValidationError(
+                        'В рецепт нельзя добавлять одинаковые ингредиентов')
+                ingr_list.append(ingr_obj)
+            except ObjectDoesNotExist:
+                raise serializers.ValidationError(
+                    'Ингредиента с таким id нет.')
+            if obj['amount'] < 1:
+                raise serializers.ValidationError(
+                    'Количество ингредиента не должно быть меньше 1.')
+        return value
+
+    def validate_tags(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                'Нужно выбрать хотя бы один тэг.'
+            )
+        tag_list = []
+        for tag_obj in value:
+            if tag_obj in tag_list:
+                raise serializers.ValidationError(
+                    'В рецепт нельзя добавлять одинаковые тэги')
+            tag_list.append(tag_obj)
+        return value
+
+    def validate_cooking_time(self, value):
+        if value < 1:
+            raise serializers.ValidationError(
+                'Время приготовления должно быть больше 1')
+        return value
 
     def create(self, validated_data):
         tags = validated_data.pop('tags')
