@@ -1,26 +1,29 @@
 import csv
 
 from django_filters.rest_framework import DjangoFilterBackend
+from django.views.decorators.http import require_http_methods
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import redirect
 from django.http import HttpResponse
 from rest_framework import mixins, viewsets
 from djoser.views import UserViewSet
 from djoser.conf import settings
-from rest_framework import mixins, viewsets, status
+from rest_framework import mixins, viewsets, status, filters
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 
 from .serializers import (CustomUserCreateSerializer, TagSerializer,
                           CustomUserSerializer, AvatarSerializer, IngredientSerializer,
                           RecipeCreateSerializer, RecipeGetSerializer,
                           FavoriteRecipeSerializer, SetPasswordSerializer, SubscriptionSerializer)
-from recipes.models import (Recipe, Ingredient, FavoriteRecipe, Tag,
+from recipes.models import (Recipe, Ingredient, FavoriteRecipe, Tag, ShortLink,
                             ShoppingCart, IngredientInRecipe, Subscription)
 from .pagination import CustomPaginator
 from .permissions import IsOwnerOrReadOnly
@@ -194,7 +197,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
         writer = csv.writer(response)
         for ingredient in shopping_cart.items():
             writer.writerow(ingredient)
-        return response
+            return Response({'status': 'Этого рецепта нет в списке покупок'})
+
+    @action(detail=True, methods=['get',], permission_classes=(AllowAny,), url_path='get-link')
+    def get_link(self, request, pk=None):
+        recipe = Recipe.objects.get(id=pk)
+        try:
+            shortlink = ShortLink.objects.get(recipe=recipe)
+            return Response({'short-link': f'{shortlink.shortlink}'})
+        except ObjectDoesNotExist:
+            return Response({'status': 'Этого рецепта нет в списке покупок'})
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -207,17 +219,21 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     # filterset_class = RecipeFilter
 
 
-class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+# viewsets.ReadOnlyModelViewSet
+
+class IngredientViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                        viewsets.GenericViewSet):
+
     queryset = Ingredient.objects.all()
     pagination_class = None
     http_method_names = ['get', 'list', 'retrieve',]
     serializer_class = IngredientSerializer
-    permission_classes = [AllowAny]
-    search_fields = ('^name',)
-   # filter_backends = (IngredientFilter, DjangoFilterBackend,)
-    filterset_fields = {
-        'name': ['icontains']
-    }
+    permission_classes = [AllowAny,]
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('^name', )
 
-    # filter_backends = (DjangoFilterBackend,)
-    # filterset_class = RecipeFilter
+
+@require_http_methods(["GET",])
+def shortlinkview(request, link):
+    shortlink_obj = ShortLink.objects.get(shortlink=link)
+    return redirect(f'/api/recipes/{shortlink_obj.recipe.id}')

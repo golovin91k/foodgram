@@ -61,3 +61,9 @@ class Subscription(models.Model):
         User, on_delete=models.CASCADE, related_name='subscribers')
     subscriber = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='authors')
+
+
+class ShortLink(models.Model):
+    recipe = models.OneToOneField(
+        Recipe, on_delete=models.CASCADE, related_name='shortlink', unique=True)
+    shortlink = models.CharField(max_length=50, unique=True)

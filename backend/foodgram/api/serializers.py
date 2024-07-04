@@ -1,12 +1,15 @@
 import base64
+import re
 
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 
-from recipes.models import Recipe, Tag, Ingredient, IngredientInRecipe, FavoriteRecipe, Subscription, ShoppingCart
-
+from recipes.models import (Recipe, Tag, Ingredient, IngredientInRecipe,
+                            FavoriteRecipe, Subscription, ShoppingCart,
+                            ShortLink)
+from .utils import create_shortlink
 
 User = get_user_model()
 
@@ -38,6 +41,12 @@ class CustomUserCreateSerializer(UserCreateSerializer):
             'first_name': {'required': True, 'allow_blank': False},
             'last_name': {'required': True, 'allow_blank': False},
         }
+
+    def validate_username(self, value):
+        if re.match(r'^[\w.@+-]+\Z', value):
+            return value
+        else:
+            raise serializers.ValidationError('Некорректное имя пользователя')
 
 
 class CustomUserSerializer(UserSerializer):
@@ -136,7 +145,6 @@ class RecipeGetSerializer(serializers.ModelSerializer):
                   'name', 'image',
                   'text', 'cooking_time')
 
-
     def get_is_favorited(self, obj):
         current_user = self.context['request'].user
         if current_user.is_authenticated:
@@ -180,6 +188,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                                                         id=ingredient_obj['id']),
                                                     amount=ingredient_obj['amount'])
             obj.save
+        create_shortlink(recipe)
         return recipe
 
     def update(self, instance, validated_data):

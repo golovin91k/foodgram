@@ -19,10 +19,12 @@ from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
 
+from api.views import shortlinkview
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
+    path('s/<str:link>/', shortlinkview, name='shortlink'),
     path(
         'redoc/',
         TemplateView.as_view(template_name='redoc.html'),

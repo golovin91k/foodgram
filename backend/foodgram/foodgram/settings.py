@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'djoser',
     'corsheaders',
-    'django_filters', 
+    'django_filters',
 ]
 
 MIDDLEWARE = [
@@ -145,9 +145,12 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend',],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 5,
-}
+    'SEARCH_PARAM': 'name',
+    }
+
 
 
 DJOSER = {
@@ -161,7 +164,7 @@ DJOSER = {
                     'user': ['api.permissions.CurrentUserOrAdminOrReadOnly'],
                     'me': ['djoser.permissions.CurrentUserOrAdmin'],
                     'user_list': ['rest_framework.permissions.AllowAny'],
-                    'user_delete': ['djoser.permissions.CurrentUserOrAdmin'],},
+                    'user_delete': ['djoser.permissions.CurrentUserOrAdmin'], },
 
 }
 
