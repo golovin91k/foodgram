@@ -257,8 +257,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         return RecipeGetSerializer(instance, context=self.context).data
 
-# FavoriteRecipeSerializer
-
 
 class ShortRecipeSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
@@ -272,41 +270,39 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-    recipes = ShortRecipeSerializer(many=True)
-    email = serializers.ReadOnlyField()
-    username = serializers.ReadOnlyField()
+    email = serializers.ReadOnlyField(source='author.email',)
+    id = serializers.ReadOnlyField(source='author.id',)
+    username = serializers.ReadOnlyField(source='author.username',)
+    first_name = serializers.ReadOnlyField(source='author.first_name',)
+    last_name = serializers.ReadOnlyField(source='author.last_name',)
     is_subscribed = serializers.SerializerMethodField()
+    recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
+    avatar = Base64ImageField(source='author.avatar',)
 
     class Meta:
         model = User
         fields = ('email', 'id', 'username', 'first_name',
-                  'last_name', 'avatar', 'recipes', 'recipes_count',
-                  'is_subscribed')
+                  'last_name', 'is_subscribed', 'recipes', 'avatar',
+                  'recipes_count')
+
 
     def get_is_subscribed(self, obj):
-       # print('DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD')
-       # print(obj)
-        #print(self.context)
         current_user = self.context['request'].user
-        if current_user.is_authenticated and current_user != obj:
-            if Subscription.objects.filter(author=obj,
+        if current_user.is_authenticated and current_user != obj.author:
+            if Subscription.objects.filter(author=obj.author,
                                            subscriber=current_user):
                 return True
             return False
         return False
-    
-    #def get_recipes(self, obj):
-     #   print('dddd222kfwsiovjeorivjeoriveorivjeorivhjeorinveoirnvoeinr')
-    #    print(obj)
-     #   request = self.context.get('request')
-     #   limit = request.GET.get('recipes_limit')
-     #   queryset = Recipe.objects.filter(author=obj)
-     #   print('3333333333333333333333333333333333333333333333333333333333333')
-     #   print(queryset)
-      #  if limit:
-      ##      queryset = queryset[: int(limit)]
-       # return ShortRecipeSerializer(queryset, many=True).data
 
-    def get_recipes_count(self, obj):
-        return len(obj.recipes.all())
+    def get_recipes(self, obj):
+        author_recipes = Recipe.objects.filter(author=obj.author)
+        request_recipes_limit = self.context.get('request').GET
+        recipes_limit = request_recipes_limit.get('recipes_limit')
+        if recipes_limit:
+            author_recipes = author_recipes[:int(recipes_limit)]
+        return ShortRecipeSerializer(author_recipes, many=True, read_only=True).data
+
+    def get_recipes_count(self, obj): 
+        return Recipe.objects.filter(author=obj.author).count()

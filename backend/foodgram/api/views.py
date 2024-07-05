@@ -113,21 +113,15 @@ class CustomUserViewSet(UserViewSet):
                 return Response({'status': 'Вы не подписаны на этого автора'})
 
     @action(methods=['get',], detail=False, url_path='subscriptions',
-            permission_classes=[IsAuthenticated], pagination_class=CustomPaginator)
+            permission_classes=[IsAuthenticated], 
+            pagination_class=CustomPaginator)
     def subscriptions(self, request):
         user = self.request.user
-        user_subscriptions = user.authors.all()
-        authors = []
-        for single_subscription in user_subscriptions:
-            #print(single_subscription.author)
-            authors.append(single_subscription.author)
-        print(authors)
-        serializer = SubscriptionSerializer(authors, data=request.data, context={
-                                            "request": request}, many=True)
-        serializer.is_valid()
-        #print(serializer)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-        # return Response(serializer.data)
+        user_subscriptions = Subscription.objects.filter(subscriber=user)
+        paginate_user_subscriptions = self.paginate_queryset(user_subscriptions)
+        serializer = SubscriptionSerializer(paginate_user_subscriptions, context={'request': request}, many=True)
+       # return Response(serializer.data, status=status.HTTP_200_OK)
+        return self.get_paginated_response(serializer.data)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
