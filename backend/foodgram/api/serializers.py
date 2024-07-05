@@ -102,7 +102,6 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class IngredientInRecipeGetSerializer(serializers.ModelSerializer):
-   # id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     id = serializers.IntegerField(source="ingredient.id")
     name = serializers.CharField(source="ingredient.name", read_only=True)
     measurement_unit = serializers.CharField(
@@ -286,7 +285,6 @@ class SubscriptionSerializer(serializers.ModelSerializer):
                   'last_name', 'is_subscribed', 'recipes', 'avatar',
                   'recipes_count')
 
-
     def get_is_subscribed(self, obj):
         current_user = self.context['request'].user
         if current_user.is_authenticated and current_user != obj.author:
@@ -302,7 +300,49 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         recipes_limit = request_recipes_limit.get('recipes_limit')
         if recipes_limit:
             author_recipes = author_recipes[:int(recipes_limit)]
-        return ShortRecipeSerializer(author_recipes, many=True, read_only=True).data
+        return ShortRecipeSerializer(author_recipes,
+                                     many=True, read_only=True).data
 
-    def get_recipes_count(self, obj): 
+    def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj.author).count()
+
+
+class SubscribeSerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ('email', 'id', 'username', 'first_name',
+                  'last_name', 'is_subscribed', 'recipes', 'avatar',
+                  'recipes_count')
+
+    def validate(self, obj):
+        current_user = self.context['request'].user
+        print('IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII')
+        print(current_user, obj)
+        if (self.context['request'].user == obj):
+            raise serializers.ValidationError({'errors': 'Ошибка подписки.'})
+        return obj
+
+    def get_is_subscribed(self, obj):
+        current_user = self.context['request'].user
+        if current_user.is_authenticated and current_user != obj:
+            if Subscription.objects.filter(author=obj,
+                                           subscriber=current_user):
+                return True
+            return False
+        return False
+
+    def get_recipes(self, obj):
+        author_recipes = Recipe.objects.filter(author=obj)
+        request_recipes_limit = self.context.get('request').GET
+        recipes_limit = request_recipes_limit.get('recipes_limit')
+        if recipes_limit:
+            author_recipes = author_recipes[:int(recipes_limit)]
+        return ShortRecipeSerializer(author_recipes,
+                                     many=True, read_only=True).data
+
+    def get_recipes_count(self, obj):
+        return Recipe.objects.filter(author=obj).count()

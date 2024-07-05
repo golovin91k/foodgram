@@ -21,7 +21,7 @@ from rest_framework.views import APIView
 
 from .serializers import (CustomUserCreateSerializer, TagSerializer,
                           CustomUserSerializer, AvatarSerializer, IngredientSerializer,
-                          RecipeCreateSerializer, RecipeGetSerializer,
+                          RecipeCreateSerializer, RecipeGetSerializer, SubscribeSerializer,
                           ShortRecipeSerializer, SetPasswordSerializer, SubscriptionSerializer)
 from recipes.models import (Recipe, Ingredient, FavoriteRecipe, Tag, ShortLink,
                             ShoppingCart, IngredientInRecipe, Subscription)
@@ -92,13 +92,9 @@ class CustomUserViewSet(UserViewSet):
         if request.method == 'POST':
             author = User.objects.get(id=kwargs['id'])
             subscriber = User.objects.get(id=self.request.user.id)
-            serializer = SubscriptionSerializer(
-                author, data=request.data, context={"request": request})
-            serializer.is_valid()
-            print(request.data)
-            Subscription.objects.get_or_create(
-                author=author, subscriber=subscriber)
-            # serializer = SubscriptionSerializer(author)
+            serializer = SubscribeSerializer(
+                author, context={"request": request})
+            Subscription.objects.get_or_create(author=author, subscriber=subscriber)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
@@ -113,14 +109,13 @@ class CustomUserViewSet(UserViewSet):
                 return Response({'status': 'Вы не подписаны на этого автора'})
 
     @action(methods=['get',], detail=False, url_path='subscriptions',
-            permission_classes=[IsAuthenticated], 
+            permission_classes=[IsAuthenticated],
             pagination_class=CustomPaginator)
     def subscriptions(self, request):
         user = self.request.user
         user_subscriptions = Subscription.objects.filter(subscriber=user)
         paginate_user_subscriptions = self.paginate_queryset(user_subscriptions)
         serializer = SubscriptionSerializer(paginate_user_subscriptions, context={'request': request}, many=True)
-       # return Response(serializer.data, status=status.HTTP_200_OK)
         return self.get_paginated_response(serializer.data)
 
 
