@@ -4,7 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.http import HttpResponse
 from rest_framework import mixins, viewsets
 from djoser.views import UserViewSet
@@ -90,11 +90,13 @@ class CustomUserViewSet(UserViewSet):
             permission_classes=[IsAuthenticated])
     def subscribe(self, request, **kwargs):
         if request.method == 'POST':
-            author = User.objects.get(id=kwargs['id'])
-            subscriber = User.objects.get(id=self.request.user.id)
+            author = get_object_or_404(User, id=kwargs['id'])
+            subscriber = get_object_or_404(User, id=self.request.user.id)
             serializer = SubscribeSerializer(
-                author, context={"request": request})
-            Subscription.objects.get_or_create(author=author, subscriber=subscriber)
+                author, data=request.data, context={"request": request})
+            serializer.is_valid(raise_exception=True)
+            Subscription.objects.create(author=author,
+                                               subscriber=subscriber)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
@@ -114,8 +116,10 @@ class CustomUserViewSet(UserViewSet):
     def subscriptions(self, request):
         user = self.request.user
         user_subscriptions = Subscription.objects.filter(subscriber=user)
-        paginate_user_subscriptions = self.paginate_queryset(user_subscriptions)
-        serializer = SubscriptionSerializer(paginate_user_subscriptions, context={'request': request}, many=True)
+        paginate_user_subscriptions = self.paginate_queryset(
+            user_subscriptions)
+        serializer = SubscriptionSerializer(paginate_user_subscriptions, context={
+                                            'request': request}, many=True)
         return self.get_paginated_response(serializer.data)
 
 

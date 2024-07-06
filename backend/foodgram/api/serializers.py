@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
-
+from rest_framework.exceptions import ValidationError
 from recipes.models import (Recipe, Tag, Ingredient, IngredientInRecipe,
                             FavoriteRecipe, Subscription, ShoppingCart,
                             ShortLink)
@@ -311,6 +311,8 @@ class SubscribeSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
+    email = serializers.ReadOnlyField()
+    username = serializers.ReadOnlyField()
 
     class Meta:
         model = User
@@ -318,13 +320,16 @@ class SubscribeSerializer(serializers.ModelSerializer):
                   'last_name', 'is_subscribed', 'recipes', 'avatar',
                   'recipes_count')
 
-    def validate(self, obj):
-        current_user = self.context['request'].user
-        print('IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII')
-        print(current_user, obj)
-        if (self.context['request'].user == obj):
-            raise serializers.ValidationError({'errors': 'Ошибка подписки.'})
-        return obj
+    def validate(self, data):
+        author = self.instance
+        subscriber = self.context['request'].user
+        if author == subscriber:
+            raise serializers.ValidationError
+        if Subscription.objects.filter(author=author, 
+                                       subscriber=subscriber).exists():
+            raise ValidationError(
+                detail='Вы уже подписаны на этого пользователя!',)
+        return data
 
     def get_is_subscribed(self, obj):
         current_user = self.context['request'].user
