@@ -95,7 +95,7 @@ class CustomUserViewSet(UserViewSet):
             serializer = SubscribeSerializer(
                 author, data=request.data, context={"request": request})
             serializer.is_valid(raise_exception=True)
-            Subscription.objects.create(author=author,
+            Subscription.objects.get_or_create(author=author,
                                                subscriber=subscriber)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -142,7 +142,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk=None):
         if request.method == 'POST':
             serializer = ShortRecipeSerializer(data=request.data)
-            if serializer.is_valid():
+            if serializer.is_valid(raise_exception=True):
                 recipe = Recipe.objects.get(id=pk)
                 user = self.request.user
                 FavoriteRecipe.objects.get_or_create(recipe=recipe, user=user)
@@ -159,12 +159,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post', 'delete'], permission_classes=(IsAuthenticated,))
     def shopping_cart(self, request, pk=None):
         if request.method == 'POST':
-            serializer = ShortRecipeSerializer(data=request.data)
-            if serializer.is_valid():
-                recipe = Recipe.objects.get(id=pk)
-                ShoppingCart.objects.get_or_create(
-                    recipe=recipe, user=self.request.user)
-                return Response({'status': 'Рецепт добавлен в список покупок'})
+            recipe = Recipe.objects.get(id=pk)
+            print('TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT')
+            print(recipe.name)
+            serializer = ShortRecipeSerializer(recipe)
+            ShoppingCart.objects.get_or_create(recipe=recipe,
+                                               user=self.request.user)
+            print(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         if request.method == 'DELETE':
             try:
                 obj = ShoppingCart.objects.get(
@@ -174,29 +177,29 @@ class RecipeViewSet(viewsets.ModelViewSet):
             except ObjectDoesNotExist:
                 return Response({'status': 'Этого рецепта нет в списке покупок'})
 
-    @action(detail=False, methods=['get',])
+
+    @action(detail=False, methods=['get',], permission_classes=(IsAuthenticated,))
     def download_shopping_cart(self, request,):
         recipes_in_user_shopping_cart = ShoppingCart.objects.filter(
             user=self.request.user)
-        shopping_cart = {}
-        for single_recipe in recipes_in_user_shopping_cart:
-            ingredients_in_single_recipe = single_recipe.recipe.ingredients.all()
-            for single_ingredient in ingredients_in_single_recipe:
-                ingredientinrecipe_obj = IngredientInRecipe.objects.get(
-                    recipe=single_recipe.recipe, ingredient=single_ingredient)
-                print(single_ingredient.name)
-                if (single_ingredient.name + ', ' + single_ingredient.measurement_unit) in shopping_cart.keys():
-                    shopping_cart[single_ingredient.name + ', '
-                                  + single_ingredient.measurement_unit] += ingredientinrecipe_obj.amount
+        ingredients_dict = {}
+        for recipe in recipes_in_user_shopping_cart:
+            for single_ingredient in recipe.recipe.recipes.annotate():
+                if (single_ingredient.ingredient.name + ', '
+                    + single_ingredient.ingredient.measurement_unit) in ingredients_dict.keys():
+                    ingredients_dict[single_ingredient.ingredient.name + ', '
+                                     + single_ingredient.ingredient.measurement_unit] += single_ingredient.amount
                 else:
-                    shopping_cart[single_ingredient.name + ', '
-                                  + single_ingredient.measurement_unit] = ingredientinrecipe_obj.amount
+                    ingredients_dict[single_ingredient.ingredient.name + ', '
+                                     + single_ingredient.ingredient.measurement_unit] = single_ingredient.amount
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="export.csv"'
+        response['Content-Disposition'] = 'attachment; filename="exported_data.csv"'
         writer = csv.writer(response)
-        for ingredient in shopping_cart.items():
+        for ingredient in ingredients_dict.items():
             writer.writerow(ingredient)
-            return Response({'status': 'Этого рецепта нет в списке покупок'})
+        return response
+
+
 
     @action(detail=True, methods=['get',], permission_classes=(AllowAny,), url_path='get-link')
     def get_link(self, request, pk=None):

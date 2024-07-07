@@ -327,8 +327,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError
         if Subscription.objects.filter(author=author, 
                                        subscriber=subscriber).exists():
-            raise ValidationError(
-                detail='Вы уже подписаны на этого пользователя!',)
+            raise ValidationError()
         return data
 
     def get_is_subscribed(self, obj):
