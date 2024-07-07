@@ -44,16 +44,16 @@ class IngredientInRecipe(models.Model):
 
 class FavoriteRecipe(models.Model):
     recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE, related_name='favorite')
+        Recipe, on_delete=models.CASCADE, related_name='favorite_recipe')
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='favorite')
 
 
 class ShoppingCart(models.Model):
     recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE, related_name='shopingcart')
+        Recipe, on_delete=models.CASCADE, related_name='shopcart_recipe')
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='shopingcart')
+        User, on_delete=models.CASCADE, related_name='recipes_in_shopcart')
 
 
 class Subscription(models.Model):
