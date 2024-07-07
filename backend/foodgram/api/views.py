@@ -141,12 +141,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post', 'delete'], permission_classes=(IsAuthenticated,))
     def favorite(self, request, pk=None):
         if request.method == 'POST':
-            serializer = ShortRecipeSerializer(data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                recipe = Recipe.objects.get(id=pk)
-                user = self.request.user
-                FavoriteRecipe.objects.get_or_create(recipe=recipe, user=user)
-                return Response({'status': 'Рецепт добавлен в избранное'})
+            user = self.request.user
+            if not Recipe.objects.filter(id=pk).exists():
+                return Response({'errors': 'Такого рецепта не существует.'},
+                                status=status.HTTP_404_NOT_FOUND)
+            recipe = Recipe.objects.get(id=pk)
+            if FavoriteRecipe.objects.filter(user=user, recipe=recipe).exists():
+                return Response({'errors': 'Этот рецепт уже добавлен в список избранного'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            serializer = ShortRecipeSerializer(recipe)
+            FavoriteRecipe.objects.create(recipe=recipe, user=user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         if request.method == 'DELETE':
             try:
                 obj = FavoriteRecipe.objects.get(
@@ -159,9 +165,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post', 'delete'], permission_classes=(IsAuthenticated,))
     def shopping_cart(self, request, pk=None):
         if request.method == 'POST':
+            user = self.request.user
+            if not Recipe.objects.filter(id=pk).exists():
+                return Response({'errors': 'Такого рецепта не существует.'},
+                                status=status.HTTP_404_NOT_FOUND)
             recipe = Recipe.objects.get(id=pk)
-            print('TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT')
-            print(recipe.name)
+            if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
+                return Response({'errors': 'Этот рецепт уже добавлен в список покупок'},
+                                status=status.HTTP_400_BAD_REQUEST)
             serializer = ShortRecipeSerializer(recipe)
             ShoppingCart.objects.get_or_create(recipe=recipe,
                                                user=self.request.user)
@@ -177,7 +188,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             except ObjectDoesNotExist:
                 return Response({'status': 'Этого рецепта нет в списке покупок'})
 
-
     @action(detail=False, methods=['get',], permission_classes=(IsAuthenticated,))
     def download_shopping_cart(self, request,):
         recipes_in_user_shopping_cart = ShoppingCart.objects.filter(
@@ -186,7 +196,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         for recipe in recipes_in_user_shopping_cart:
             for single_ingredient in recipe.recipe.recipes.annotate():
                 if (single_ingredient.ingredient.name + ', '
-                    + single_ingredient.ingredient.measurement_unit) in ingredients_dict.keys():
+                        + single_ingredient.ingredient.measurement_unit) in ingredients_dict.keys():
                     ingredients_dict[single_ingredient.ingredient.name + ', '
                                      + single_ingredient.ingredient.measurement_unit] += single_ingredient.amount
                 else:
@@ -198,8 +208,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         for ingredient in ingredients_dict.items():
             writer.writerow(ingredient)
         return response
-
-
 
     @action(detail=True, methods=['get',], permission_classes=(AllowAny,), url_path='get-link')
     def get_link(self, request, pk=None):
