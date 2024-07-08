@@ -22,7 +22,8 @@ class RecipeFilter(FilterSet):
     )
 
     is_favorited = filters.BooleanFilter(method='filter_is_favorited')
-    is_in_shopping_cart = filters.BooleanFilter(method='filter_is_in_shopping_cart')
+    is_in_shopping_cart = filters.BooleanFilter(
+        method='filter_is_in_shopping_cart')
 
     class Meta:
         model = Recipe
@@ -38,5 +39,5 @@ class RecipeFilter(FilterSet):
         user = self.request.user
         if value and not user.is_anonymous:
             return queryset.filter(shopcart_recipe__user=user)
-        
+
         return queryset

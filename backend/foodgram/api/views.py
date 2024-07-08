@@ -100,15 +100,18 @@ class CustomUserViewSet(UserViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
+            if not User.objects.filter(id=kwargs['id']).exists():
+                return Response({'errors': 'Такого автора не существует.'},
+                                status=status.HTTP_404_NOT_FOUND)
             author = User.objects.get(id=kwargs['id'])
             subscriber = User.objects.get(id=self.request.user.id)
             try:
                 obj = Subscription.objects.get(
                     author=author, subscriber=subscriber)
                 obj.delete()
-                return Response({'status': 'Автор удален из подписок'})
+                return Response({'status': 'Автор удален из подписок'}, status=status.HTTP_204_NO_CONTENT)
             except ObjectDoesNotExist:
-                return Response({'status': 'Вы не подписаны на этого автора'})
+                return Response({'status': 'Вы не подписаны на этого автора'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['get',], detail=False, url_path='subscriptions',
             permission_classes=[IsAuthenticated],
@@ -154,13 +157,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
+            if not Recipe.objects.filter(id=pk).exists():
+                return Response({'errors': 'Такого рецепта не существует.'},
+                                status=status.HTTP_404_NOT_FOUND)
             try:
                 obj = FavoriteRecipe.objects.get(
                     recipe=pk, user=self.request.user)
                 obj.delete()
-                return Response({'status': 'Рецепт удален из избранного'})
+                return Response({'status': 'Рецепт удален из избранного'},
+                                status=status.HTTP_204_NO_CONTENT)
             except ObjectDoesNotExist:
-                return Response({'status': 'Этого рецепта нет в избранном'})
+                return Response({'status': 'Этого рецепта нет в избранном'},
+                                status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post', 'delete'], permission_classes=(IsAuthenticated,))
     def shopping_cart(self, request, pk=None):
@@ -180,13 +188,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
+            if not Recipe.objects.filter(id=pk).exists():
+                return Response({'errors': 'Такого рецепта не существует.'},
+                                status=status.HTTP_404_NOT_FOUND)
             try:
                 obj = ShoppingCart.objects.get(
                     recipe=pk, user=self.request.user)
                 obj.delete()
-                return Response({'status': 'Рецепт удален из списка покупок'})
+                return Response({'status': 'Рецепт удален из списка покупок'},
+                                status=status.HTTP_204_NO_CONTENT)
             except ObjectDoesNotExist:
-                return Response({'status': 'Этого рецепта нет в списке покупок'})
+                return Response({'status': 'Этого рецепта нет в списке покупок'},
+                                status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get',], permission_classes=(IsAuthenticated,))
     def download_shopping_cart(self, request,):

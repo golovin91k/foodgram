@@ -29,7 +29,7 @@ class Recipe(models.Model):
     text = models.TextField()
     cooking_time = models.IntegerField()
     pub_date = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         ordering = ['-pub_date']
 
@@ -65,5 +65,6 @@ class Subscription(models.Model):
 
 class ShortLink(models.Model):
     recipe = models.OneToOneField(
-        Recipe, on_delete=models.CASCADE, related_name='shortlink', unique=True)
+        Recipe, on_delete=models.CASCADE,
+        related_name='shortlink', unique=True)
     shortlink = models.CharField(max_length=50, unique=True)
