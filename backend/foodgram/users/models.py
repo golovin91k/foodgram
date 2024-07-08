@@ -3,6 +3,7 @@ from django.db import models
 
 
 class MyUser(AbstractUser):
+    """Модель пользователя."""
     email = models.EmailField(unique=True, blank=False)
     avatar = models.ImageField(
         upload_to='users', null=True, default=None)
@@ -12,6 +13,7 @@ class MyUser(AbstractUser):
 
 
 class UserSubscriber(models.Model):
+    """Модель подписки пользователей."""
     user = models.ForeignKey(
         MyUser, on_delete=models.CASCADE, related_name="following")
     subscriber = models.ForeignKey(

@@ -6,16 +6,19 @@ User = get_user_model()
 
 
 class Tag(models.Model):
+    """Модель тэга."""
     name = models.CharField(max_length=32, unique=True)
     slug = models.SlugField(max_length=32, unique=True)
 
 
 class Ingredient(models.Model):
+    """Модель ингредиента."""
     name = models.CharField(max_length=128)
     measurement_unit = models.CharField(max_length=64)
 
 
 class Recipe(models.Model):
+    """Модель рецепта."""
     tags = models.ManyToManyField(Tag)
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='recipes')
@@ -35,6 +38,7 @@ class Recipe(models.Model):
 
 
 class IngredientInRecipe(models.Model):
+    """Модель, позволяющая связать рецепт и ингредиент для рецепта."""
     recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE, related_name='recipes')
     ingredient = models.ForeignKey(
@@ -43,6 +47,7 @@ class IngredientInRecipe(models.Model):
 
 
 class FavoriteRecipe(models.Model):
+    """Модель израбранного рецапта."""
     recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE, related_name='favorite_recipe')
     user = models.ForeignKey(
@@ -50,6 +55,7 @@ class FavoriteRecipe(models.Model):
 
 
 class ShoppingCart(models.Model):
+    """Модель списка покупок."""
     recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE, related_name='shopcart_recipe')
     user = models.ForeignKey(
@@ -57,6 +63,7 @@ class ShoppingCart(models.Model):
 
 
 class Subscription(models.Model):
+    """Модель подписки."""
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='subscribers')
     subscriber = models.ForeignKey(
@@ -64,6 +71,7 @@ class Subscription(models.Model):
 
 
 class ShortLink(models.Model):
+    """Модель короткой ссылки на рецепт."""
     recipe = models.OneToOneField(
         Recipe, on_delete=models.CASCADE,
         related_name='shortlink', unique=True)
