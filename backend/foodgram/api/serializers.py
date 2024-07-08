@@ -7,9 +7,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+
 from recipes.models import (Recipe, Tag, Ingredient, IngredientInRecipe,
-                            FavoriteRecipe, Subscription, ShoppingCart,
-                            ShortLink)
+                            FavoriteRecipe, Subscription, ShoppingCart,)
 from .utils import create_shortlink
 
 User = get_user_model()
@@ -325,7 +325,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
         subscriber = self.context['request'].user
         if author == subscriber:
             raise serializers.ValidationError
-        if Subscription.objects.filter(author=author, 
+        if Subscription.objects.filter(author=author,
                                        subscriber=subscriber).exists():
             raise ValidationError()
         return data

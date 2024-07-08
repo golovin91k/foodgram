@@ -9,8 +9,6 @@ class MyUser(AbstractUser):
     username = models.CharField(max_length=150, unique=True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name', 'password', 'username']
-#    subscriptions = models.ManyToManyField(
-#        'self', related_name='followers', symmetrical=False, blank=True)
 
 
 class UserSubscriber(models.Model):
