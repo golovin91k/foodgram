@@ -246,8 +246,9 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         instance.cooking_time = validated_data.get(
             'cooking_time', instance.cooking_time)
         instance.tags.set(tags)
+        IngredientInRecipe.objects.filter(recipe=instance).delete()
         for ingredient_obj in ingredients:
-            obj = IngredientInRecipe.objects.get_or_create(recipe=instance, ingredient=Ingredient.objects.get(
+            obj = IngredientInRecipe.objects.create(recipe=instance, ingredient=Ingredient.objects.get(
                 id=ingredient_obj['id']), amount=ingredient_obj['amount'])
             obj.save
         instance.save()
