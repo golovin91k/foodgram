@@ -237,11 +237,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=(AllowAny,), url_path='get-link')
     def get_link(self, request, pk=None):
         recipe = Recipe.objects.get(id=pk)
+        print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
+        print(request.get_full_path())
         try:
             shortlink = ShortLink.objects.get(recipe=recipe)
-            return Response({'short-link': f'{shortlink.shortlink}'})
+            h9slocalhost:8000
+            return Response({'short-link': request.META['HTTP_HOST'] + '/s/' + f'{shortlink.shortlink}'},)
         except ObjectDoesNotExist:
-            return Response({'status': 'Этого рецепта нет в списке покупок'})
+            return Response({'status': 'Такого рецепта не существует.'})
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -267,4 +270,4 @@ class IngredientViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
 @require_http_methods(["GET",])
 def shortlinkview(request, link):
     shortlink_obj = ShortLink.objects.get(shortlink=link)
-    return redirect(f'/api/recipes/{shortlink_obj.recipe.id}')
+    return redirect(f'/recipes/{shortlink_obj.recipe.id}')
