@@ -1,4 +1,5 @@
 import csv
+import codecs
 
 from django_filters.rest_framework import DjangoFilterBackend
 from django.views.decorators.http import require_http_methods
@@ -226,6 +227,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = ('attachment;'
                                            'filename="exported_data.csv"')
+        response.write(codecs.BOM_UTF8)
         writer = csv.writer(response)
         for ingredient in ingredients_dict.items():
             writer.writerow(ingredient)
