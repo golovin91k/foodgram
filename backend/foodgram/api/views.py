@@ -241,7 +241,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         print(request.get_full_path())
         try:
             shortlink = ShortLink.objects.get(recipe=recipe)
-            h9slocalhost:8000
             return Response({'short-link': request.META['HTTP_HOST'] + '/s/' + f'{shortlink.shortlink}'},)
         except ObjectDoesNotExist:
             return Response({'status': 'Такого рецепта не существует.'})
