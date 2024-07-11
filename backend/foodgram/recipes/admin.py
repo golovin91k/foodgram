@@ -19,9 +19,9 @@ class IngredientAdmin(admin.ModelAdmin):
 @admin.register(models.Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'cooking_time',
-                    'text', 'tags', 'image', 'author')
+                    'text', 'image', 'author')
     list_editable = (
-        'name', 'cooking_time', 'text', 'tags',
+        'name', 'cooking_time', 'text',
         'image', 'author'
     )
     readonly_fields = ('in_favorited',)
