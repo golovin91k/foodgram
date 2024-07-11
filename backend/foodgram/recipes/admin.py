@@ -18,12 +18,13 @@ class IngredientAdmin(admin.ModelAdmin):
 
 @admin.register(models.Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'name', 'author', 'in_favorited')
+    list_display = ('pk', 'name', 'cooking_time',
+                    'text', 'tags', 'image', 'author')
     list_editable = (
         'name', 'cooking_time', 'text', 'tags',
         'image', 'author'
     )
-    readonly_fields = ('in_favorites',)
+    readonly_fields = ('in_favorited',)
     list_filter = ('name', 'author', 'tags')
 
     @admin.display(description='В избранном')
