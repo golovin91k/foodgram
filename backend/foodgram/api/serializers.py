@@ -222,11 +222,11 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
         recipe.save()
-        for ingredient_obj in ingredients:
-            obj = IngredientInRecipe.objects.create(recipe=recipe,
-                                                    ingredient=Ingredient.objects.get(
-                                                        id=ingredient_obj['id']),
-                                                    amount=ingredient_obj['amount'])
+        for ingr_obj in ingredients:
+            obj = IngredientInRecipe.objects.create(
+                recipe=recipe,
+                ingredient=Ingredient.objects.get(id=ingr_obj['id']),
+                amount=ingr_obj['amount'])
             obj.save
         create_shortlink(recipe)
         return recipe
@@ -248,8 +248,10 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         instance.tags.set(tags)
         IngredientInRecipe.objects.filter(recipe=instance).delete()
         for ingredient_obj in ingredients:
-            obj = IngredientInRecipe.objects.create(recipe=instance, ingredient=Ingredient.objects.get(
-                id=ingredient_obj['id']), amount=ingredient_obj['amount'])
+            obj = IngredientInRecipe.objects.create(
+                recipe=instance,
+                ingredient=Ingredient.objects.get(
+                    id=ingredient_obj['id']), amount=ingredient_obj['amount'])
             obj.save
         instance.save()
         return instance

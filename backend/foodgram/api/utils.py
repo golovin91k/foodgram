@@ -25,3 +25,18 @@ def create_shortlink(recipe):
             break
     obj = ShortLink.objects.create(recipe=recipe, shortlink=shortlink)
     obj.save
+
+
+def sum_ingredients(recipes_in_user_shopping_cart):
+    ingr_dict = {}
+    for recipe in recipes_in_user_shopping_cart:
+        for ingr in recipe.recipe.recipes.annotate():
+            if ((ingr.ingredient.name + ', '
+                 + ingr.ingredient.measurement_unit)
+                    in ingr_dict.keys()):
+                ingr_dict[ingr.ingredient.name + ', '
+                          + ingr.ingredient.measurement_unit] += ingr.amount
+            else:
+                ingr_dict[ingr.ingredient.name + ', '
+                          + ingr.ingredient.measurement_unit] = ingr.amount
+    return ingr_dict

@@ -25,6 +25,7 @@ from recipes.models import (Recipe, Ingredient, FavoriteRecipe, Tag, ShortLink,
 from .pagination import CustomPaginator
 from .permissions import IsOwnerOrReadOnly
 from .filters import RecipeFilter
+from .utils import sum_ingredients
 
 
 User = get_user_model()
@@ -75,9 +76,9 @@ class CustomUserViewSet(UserViewSet):
             return Response('Avatar is deleted',
                             status=status.HTTP_204_NO_CONTENT)
 
-    @action(methods=['post',], detail=False, url_path='set_password',
+    @action(methods=['post', ], detail=False, url_path='set_password',
             permission_classes=[IsAuthenticated],
-            serializer_class=[SetPasswordSerializer,])
+            serializer_class=[SetPasswordSerializer, ])
     def set_password(self, request):
         serializer = SetPasswordSerializer(data=request.data,)
         if serializer.is_valid():
@@ -114,7 +115,7 @@ class CustomUserViewSet(UserViewSet):
                 return Response({'status': 'Вы не подписаны на этого автора'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-    @action(methods=['get',], detail=False, url_path='subscriptions',
+    @action(methods=['get', ], detail=False, url_path='subscriptions',
             permission_classes=[IsAuthenticated],
             pagination_class=CustomPaginator)
     def subscriptions(self, request):
@@ -133,7 +134,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = (IsOwnerOrReadOnly,)
     pagination_class = CustomPaginator
     http_method_names = ['get', 'post', 'patch',
-                         'delete', 'list', 'retrieve',]
+                         'delete', 'list', 'retrieve']
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
@@ -209,21 +210,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
                                             'в списке покупок')},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['get',],
-            permission_classes=(IsAuthenticated,))
-    def download_shopping_cart(self, request,):
+    @action(detail=False, methods=['get', ],
+            permission_classes=(IsAuthenticated, ))
+    def download_shopping_cart(self, request):
         recipes_in_user_shopping_cart = ShoppingCart.objects.filter(
             user=self.request.user)
-        ingredients_dict = {}
-        for recipe in recipes_in_user_shopping_cart:
-            for single_ingredient in recipe.recipe.recipes.annotate():
-                if (single_ingredient.ingredient.name + ', '
-                        + single_ingredient.ingredient.measurement_unit) in ingredients_dict.keys():
-                    ingredients_dict[single_ingredient.ingredient.name + ', '
-                                     + single_ingredient.ingredient.measurement_unit] += single_ingredient.amount
-                else:
-                    ingredients_dict[single_ingredient.ingredient.name + ', '
-                                     + single_ingredient.ingredient.measurement_unit] = single_ingredient.amount
+        ingredients_dict = sum_ingredients(recipes_in_user_shopping_cart)
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = ('attachment;'
                                            'filename="exported_data.csv"')
@@ -233,13 +225,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
             writer.writerow(ingredient)
         return response
 
-    @action(detail=True, methods=['get',],
+    @action(detail=True, methods=['get', ],
             permission_classes=(AllowAny,), url_path='get-link')
     def get_link(self, request, pk=None):
         recipe = Recipe.objects.get(id=pk)
         try:
             shortlink = ShortLink.objects.get(recipe=recipe)
-            return Response({'short-link': request.META['HTTP_HOST'] + '/s/' + f'{shortlink.shortlink}'},)
+            return Response({'short-link': request.META['HTTP_HOST']
+                             + '/s/' + f'{shortlink.shortlink}'},)
         except ObjectDoesNotExist:
             return Response({'status': 'Такого рецепта не существует.'})
 
