@@ -240,7 +240,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     pagination_class = None
-    http_method_names = ['get', 'list', 'retrieve',]
+    http_method_names = ['get', 'list', 'retrieve']
     serializer_class = TagSerializer
     permission_classes = [AllowAny]
 
@@ -250,14 +250,14 @@ class IngredientViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
 
     queryset = Ingredient.objects.all()
     pagination_class = None
-    http_method_names = ['get', 'list', 'retrieve',]
+    http_method_names = ['get', 'list', 'retrieve']
     serializer_class = IngredientSerializer
-    permission_classes = [AllowAny,]
+    permission_classes = [AllowAny, ]
     filter_backends = (filters.SearchFilter,)
     search_fields = ('^name', )
 
 
-@ require_http_methods(["GET",])
+@ require_http_methods(["GET", ])
 def shortlinkview(request, link):
     shortlink_obj = ShortLink.objects.get(shortlink=link)
     return redirect(f'/recipes/{shortlink_obj.recipe.id}')
