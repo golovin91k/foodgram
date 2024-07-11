@@ -10,7 +10,7 @@ services:
 
   backend:
     container_name: foodgram-back
-    image: mrbnd/foodgram_backend
+    image: golovin91k/foodgram_backend
     env_file: .env
     volumes:
       - static:/static
@@ -18,7 +18,7 @@ services:
 
   frontend:
     container_name: foodgram-front
-    image: mrbnd/foodgram_frontend
+    image: golovin91k/foodgram_frontend
     command: cp -r /app/build/. /static/
     volumes:
       - static:/static/
