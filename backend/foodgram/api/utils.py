@@ -1,19 +1,19 @@
 import random
 import string
 
-from django.db import models
+from recipes.models import ShortLink
 
-from recipes.models import Recipe, ShortLink
 
 string.ascii_letters = (
     'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
 
 
 def check_shortlink(recipe, shortlink):
-    if ShortLink.objects.filter(shortlink=shortlink) or ShortLink.objects.filter(recipe=recipe):
+    if ShortLink.objects.filter(shortlink=shortlink).exists():
         return False
-    else:
-        return True
+    if ShortLink.objects.filter(recipe=recipe).exists():
+        return False
+    return True
 
 
 def create_shortlink(recipe):

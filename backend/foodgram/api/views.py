@@ -237,8 +237,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=(AllowAny,), url_path='get-link')
     def get_link(self, request, pk=None):
         recipe = Recipe.objects.get(id=pk)
-        print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
-        print(request.get_full_path())
         try:
             shortlink = ShortLink.objects.get(recipe=recipe)
             return Response({'short-link': request.META['HTTP_HOST'] + '/s/' + f'{shortlink.shortlink}'},)
@@ -266,7 +264,7 @@ class IngredientViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     search_fields = ('^name', )
 
 
-@require_http_methods(["GET",])
+@ require_http_methods(["GET",])
 def shortlinkview(request, link):
     shortlink_obj = ShortLink.objects.get(shortlink=link)
     return redirect(f'/recipes/{shortlink_obj.recipe.id}')
