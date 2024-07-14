@@ -11,6 +11,8 @@ from rest_framework.exceptions import ValidationError
 from recipes.models import (Recipe, Tag, Ingredient, IngredientInRecipe,
                             FavoriteRecipe, Subscription, ShoppingCart,)
 from .utils import create_shortlink
+from .constans import MINIMUM_AMOUNT, MINIMUM_COOKING_TIME
+
 
 User = get_user_model()
 
@@ -39,7 +41,7 @@ class SpecialUserCreateSerializer(UserCreateSerializer):
 
     def validate_username(self, value):
         if not re.match(r'^[\w.@+-]+\Z', value):
-            raise serializers.ValidationError('Некорректный юзернейм')
+            raise serializers.ValidationError({'Некорректный юзернейм'})
         return value
 
 
@@ -76,7 +78,8 @@ class SetPasswordSerializer(serializers.Serializer):
 
     def save(self, instance, validated_data):
         if not instance.check_password(validated_data['current_password']):
-            raise serializers.ValidationError({'Введен неверный текущий пароль'})
+            raise serializers.ValidationError(
+                {'Введен неверный текущий пароль'})
         instance.set_password(validated_data['new_password'])
         instance.save()
         return instance
@@ -90,26 +93,48 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class IngredientInRecipeGetSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(source="ingredient.id")
-    name = serializers.CharField(source="ingredient.name", read_only=True)
+    """
+    Сериализатор количества ингредиента в рецепте.
+    Сериализатор используется при чтении рецепта.
+    """
+    id = serializers.IntegerField(source='ingredient.id')
+    name = serializers.CharField(source='ingredient.name', read_only=True)
     measurement_unit = serializers.CharField(
         source="ingredient.measurement_unit", read_only=True)
 
     class Meta:
         model = IngredientInRecipe
-        fields = ["id", "name", "measurement_unit", "amount"]
+        fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
 class IngredientInRecipeCreateSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
+    """
+    Сериализатор количества ингредиента в рецепте.
+    Сериализатор используется при создании и редактировании рецепта.
+    """
+    id = serializers.IntegerField(source='ingredient.id')
     amount = serializers.IntegerField()
 
     class Meta:
         model = IngredientInRecipe
         fields = ('id', 'amount')
 
+    def validate_id(self, value):
+        if not Ingredient.objects.filter(id=value).exists():
+            raise serializers.ValidationError(
+                {'Ингредиента с таким id не существует.'})
+        return value
+
+    def validate_amount(self, value):
+        if value < MINIMUM_AMOUNT:
+            raise serializers.ValidationError(
+                {'Введено неверное количество ингредиента: '
+                 'количество ингредиента не может быть меньше единицы.'})
+        return value
+
 
 class TagSerializer(serializers.ModelSerializer):
+    """Сериализатор тега."""
 
     class Meta:
         model = Tag
@@ -117,6 +142,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class RecipeGetSerializer(serializers.ModelSerializer):
+    """Сериалиазатор чтения рецепта."""
     tags = TagSerializer(many=True)
     image = Base64ImageField()
     author = SpecialUserSerializer(read_only=True)
@@ -153,6 +179,7 @@ class RecipeGetSerializer(serializers.ModelSerializer):
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
+    """Сериалиазатор создания и изменения рецепта."""
     tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all())
     image = Base64ImageField()
@@ -180,7 +207,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(
                     'Ингредиента с таким id нет.')
-            if obj['amount'] < 1:
+            if obj['amount'] < MINIMUM_AMOUNT:
                 raise serializers.ValidationError(
                     'Количество ингредиента не должно быть меньше 1.')
         return value
@@ -199,9 +226,9 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_cooking_time(self, value):
-        if value < 1:
+        if value < MINIMUM_COOKING_TIME:
             raise serializers.ValidationError(
-                'Время приготовления должно быть больше 1')
+                'Время приготовления должно быть больше 0')
         return value
 
     def create(self, validated_data):
