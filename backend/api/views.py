@@ -131,7 +131,7 @@ class CustomUserViewSet(UserViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    permission_classes = (IsOwnerOrReadOnly, IsAuthenticated)
+    permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
     pagination_class = CustomPaginator
     http_method_names = ['get', 'post', 'patch',
                          'delete', 'list', 'retrieve']

@@ -199,10 +199,10 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         ingr_list = []
         for obj in value:
             try:
-                ingr_obj = Ingredient.objects.get(id=obj['id'])
+                ingr_obj = Ingredient.objects.get(id=obj['ingredient']['id'])
                 if ingr_obj in ingr_list:
                     raise serializers.ValidationError(
-                        'В рецепт нельзя добавлять одинаковые ингредиентов')
+                        'В рецепт нельзя добавлять одинаковые ингредиенты')
                 ingr_list.append(ingr_obj)
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(
@@ -231,44 +231,40 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                 'Время приготовления должно быть больше 0')
         return value
 
+    def create_ingredients_for_recipe(self, recipe, ingredients):
+        ingredients_list = []
+        for ingredient in ingredients:
+            ingredients_list.append(IngredientInRecipe(
+                recipe=recipe,
+                ingredient=Ingredient.objects.get(
+                    id=ingredient['ingredient']['id']),
+                amount=ingredient['amount']))
+        IngredientInRecipe.objects.bulk_create(ingredients_list)
+
     def create(self, validated_data):
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
         recipe.save()
-        for ingr_obj in ingredients:
-            obj = IngredientInRecipe.objects.create(
-                recipe=recipe,
-                ingredient=Ingredient.objects.get(id=ingr_obj['id']),
-                amount=ingr_obj['amount'])
-            obj.save
+        self.create_ingredients_for_recipe(
+            recipe=recipe, ingredients=ingredients)
         create_shortlink(recipe)
         return recipe
 
     def update(self, instance, validated_data):
-        list_obj = ['tags', 'ingredients']
-        for obj in list_obj:
-            if obj not in validated_data.keys():
-                raise serializers.ValidationError
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
         if not tags or not ingredients:
-            raise serializers.ValidationError('sss')
-        instance.name = validated_data.get('name', instance.name)
-        instance.image = validated_data.get('image', instance.image)
-        instance.text = validated_data.get('text', instance.text)
-        instance.cooking_time = validated_data.get(
-            'cooking_time', instance.cooking_time)
+            raise serializers.ValidationError(
+                {'Отсутствуют тег или ингредиент.'})
+        super(RecipeCreateSerializer, self).update(instance, validated_data)
         instance.tags.set(tags)
         IngredientInRecipe.objects.filter(recipe=instance).delete()
-        for ingredient_obj in ingredients:
-            obj = IngredientInRecipe.objects.create(
-                recipe=instance,
-                ingredient=Ingredient.objects.get(
-                    id=ingredient_obj['id']), amount=ingredient_obj['amount'])
-            obj.save
+        self.create_ingredients_for_recipe(
+            recipe=instance, ingredients=ingredients)
         instance.save()
+        # return super(MySerializer, self).update(instance, validated_data)
         return instance
 
     def to_representation(self, instance):
