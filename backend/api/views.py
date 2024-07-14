@@ -14,8 +14,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from .serializers import (CustomUserCreateSerializer, TagSerializer,
-                          CustomUserSerializer, AvatarSerializer,
+from .serializers import (SpecialUserCreateSerializer, TagSerializer,
+                          SpecialUserSerializer, AvatarSerializer,
                           IngredientSerializer, RecipeCreateSerializer,
                           RecipeGetSerializer, SubscribeSerializer,
                           ShortRecipeSerializer, SetPasswordSerializer,
@@ -33,7 +33,7 @@ User = get_user_model()
 
 class CustomUserViewSet(UserViewSet):
     queryset = User.objects.all()
-    serializer_class = CustomUserSerializer
+    serializer_class = SpecialUserSerializer
     pagination_class = CustomPaginator
 
     def get_permissions(self):
@@ -47,12 +47,12 @@ class CustomUserViewSet(UserViewSet):
 
     def get_serializer_class(self):
         if self.action == 'create':
-            return CustomUserCreateSerializer
+            return SpecialUserCreateSerializer
         elif self.action == 'avatar':
             return AvatarSerializer
         elif self.action == 'set_password':
             return SetPasswordSerializer
-        return CustomUserSerializer
+        return SpecialUserSerializer
 
     def perform_create(self, serializer, *args, **kwargs):
         serializer.save(*args, **kwargs)
@@ -131,7 +131,7 @@ class CustomUserViewSet(UserViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    permission_classes = (IsOwnerOrReadOnly,)
+    permission_classes = (IsOwnerOrReadOnly, IsAuthenticated)
     pagination_class = CustomPaginator
     http_method_names = ['get', 'post', 'patch',
                          'delete', 'list', 'retrieve']

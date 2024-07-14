@@ -14,12 +14,10 @@ from .utils import create_shortlink
 
 User = get_user_model()
 
-"""
-Вспомогательный сериализатор указан ниже:
-"""
-
 
 class Base64ImageField(serializers.ImageField):
+    """Вспомогательный сериализатор для обработки изображения."""
+
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith('data:image'):
             format, imgstr = data.split(';base64,')
@@ -28,47 +26,41 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
-"""
-Сериализаторы для модели User указаны ниже.
-"""
-
-
-class CustomUserCreateSerializer(UserCreateSerializer):
+class SpecialUserCreateSerializer(UserCreateSerializer):
+    """Сериализатор для создания объекта пользователя."""
     class Meta(UserCreateSerializer.Meta):
         model = User
-        fields = ("email", "id", "username",
-                  "first_name", "last_name", "password")
+        fields = ('email', 'id', 'username',
+                  'first_name', 'last_name', 'password')
         extra_kwargs = {
             'first_name': {'required': True, 'allow_blank': False},
             'last_name': {'required': True, 'allow_blank': False},
         }
 
     def validate_username(self, value):
-        if re.match(r'^[\w.@+-]+\Z', value):
-            return value
-        else:
-            raise serializers.ValidationError('Некорректное имя пользователя')
+        if not re.match(r'^[\w.@+-]+\Z', value):
+            raise serializers.ValidationError('Некорректный юзернейм')
+        return value
 
 
-class CustomUserSerializer(UserSerializer):
+class SpecialUserSerializer(UserSerializer):
+    """Сериализатор для просмотра объекта пользователя."""
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta(UserSerializer.Meta):
         model = User
         fields = ('email', 'id', 'username',
-                  'first_name', 'last_name', 'is_subscribed', 'avatar',)
+                  'first_name', 'last_name',
+                  'is_subscribed', 'avatar')
 
     def get_is_subscribed(self, obj):
         current_user = self.context['request'].user
-        if current_user.is_authenticated and current_user != obj:
-            if Subscription.objects.filter(author=obj,
-                                           subscriber=current_user):
-                return True
-            return False
-        return False
+        return (current_user.is_authenticated and current_user != obj
+                and obj.subscribers.filter(subscriber=current_user).exists())
 
 
 class AvatarSerializer(serializers.Serializer):
+    """Сериализатор для создания и изменения аватара пользователя."""
     avatar = Base64ImageField()
 
     def save(self, instance, validated_data):
@@ -78,24 +70,20 @@ class AvatarSerializer(serializers.Serializer):
 
 
 class SetPasswordSerializer(serializers.Serializer):
+    """Сериализатор для изменения пароля пользователя."""
     new_password = serializers.CharField()
     current_password = serializers.CharField()
 
     def save(self, instance, validated_data):
-        if instance.check_password(validated_data['current_password']):
-            instance.set_password(validated_data['new_password'])
-            instance.save()
-            return instance
-        raise serializers.ValidationError({'Введен неверный текущий пароль'})
-
-
-"""
-Сериализаторы для остальных моделей указаны ниже.
-"""
+        if not instance.check_password(validated_data['current_password']):
+            raise serializers.ValidationError({'Введен неверный текущий пароль'})
+        instance.set_password(validated_data['new_password'])
+        instance.save()
+        return instance
 
 
 class IngredientSerializer(serializers.ModelSerializer):
-
+    """Сериализатор ингредиента."""
     class Meta:
         model = Ingredient
         fields = '__all__'
@@ -131,7 +119,7 @@ class TagSerializer(serializers.ModelSerializer):
 class RecipeGetSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     image = Base64ImageField()
-    author = CustomUserSerializer(read_only=True)
+    author = SpecialUserSerializer(read_only=True)
     ingredients = IngredientInRecipeGetSerializer(
         many=True, read_only=True, source='recipes')
     is_favorited = serializers.SerializerMethodField()

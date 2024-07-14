@@ -63,7 +63,7 @@ WSGI_APPLICATION = 'foodgram.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
-
+"""
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -74,7 +74,14 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT', 5432)
     }
 }
+"""
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': str(os.path.join(BASE_DIR, "db.sqlite3"))
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -147,7 +154,7 @@ DJOSER = {
         'set_password': 'api.serializers.SetPasswordSerializer',
     },
     'PERMISSIONS': {'user_create': ['rest_framework.permissions.AllowAny'],
-                    'user': ['api.permissions.CurrentUserOrAdminOrReadOnly'],
+                    'user': ['api.permissions.IsCurrentUserOrAdminOrReadOnly'],
                     'me': ['djoser.permissions.CurrentUserOrAdmin'],
                     'user_list': ['rest_framework.permissions.AllowAny'],
                     'user_delete': ['djoser.permissions.CurrentUserOrAdmin'], },
