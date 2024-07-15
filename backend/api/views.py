@@ -17,9 +17,9 @@ from rest_framework.response import Response
 from .serializers import (SpecialUserCreateSerializer, TagSerializer,
                           SpecialUserSerializer, AvatarSerializer,
                           IngredientSerializer, RecipeCreateSerializer,
-                          RecipeGetSerializer, SubscribeSerializer,
+                          RecipeGetSerializer, SubscribeCreateSerializer,
                           ShortRecipeSerializer, SetPasswordSerializer,
-                          SubscriptionSerializer)
+                          SubscribeReturnSerializer)
 from recipes.models import (Recipe, Ingredient, FavoriteRecipe, Tag, ShortLink,
                             ShoppingCart, Subscription)
 from .pagination import CustomPaginator
@@ -89,14 +89,17 @@ class CustomUserViewSet(UserViewSet):
     @action(methods=['post', 'delete'], detail=True, url_path='subscribe',
             permission_classes=[IsAuthenticated])
     def subscribe(self, request, **kwargs):
+        author = get_object_or_404(User, id=kwargs['id'])
         if request.method == 'POST':
-            author = get_object_or_404(User, id=kwargs['id'])
             subscriber = get_object_or_404(User, id=self.request.user.id)
-            serializer = SubscribeSerializer(
-                author, data=request.data, context={"request": request})
+            serializer = SubscribeCreateSerializer(
+                data={'author': author.id}, context={'request': request})
             serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            subscription = serializer.save(subscriber=request.user)
+            return Response(SubscribeReturnSerializer(
+                subscription,
+                context={'request': request}).data,
+                status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
             if not User.objects.filter(id=kwargs['id']).exists():
@@ -122,9 +125,10 @@ class CustomUserViewSet(UserViewSet):
         user_subscriptions = Subscription.objects.filter(subscriber=user)
         paginate_user_subscriptions = self.paginate_queryset(
             user_subscriptions)
-        serializer = SubscriptionSerializer(paginate_user_subscriptions,
-                                            context={'request': request},
-                                            many=True)
+        serializer = SubscribeReturnSerializer(
+            paginate_user_subscriptions,
+            context={'request': request},
+            many=True)
         return self.get_paginated_response(serializer.data)
 
 
