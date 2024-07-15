@@ -41,10 +41,6 @@ class CustomUserViewSet(UserViewSet):
             self.permission_classes = settings.PERMISSIONS.me
         return super().get_permissions()
 
-    def get_queryset(self):
-        queryset = User.objects.all()
-        return queryset
-
     def get_serializer_class(self):
         if self.action == 'create':
             return SpecialUserCreateSerializer
@@ -53,10 +49,6 @@ class CustomUserViewSet(UserViewSet):
         elif self.action == 'set_password':
             return SetPasswordSerializer
         return SpecialUserSerializer
-
-    def perform_create(self, serializer, *args, **kwargs):
-        serializer.save(*args, **kwargs)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(methods=['put', 'delete'], detail=False, url_path='me/avatar',
             permission_classes=[IsAuthenticated])
@@ -71,10 +63,9 @@ class CustomUserViewSet(UserViewSet):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
-        if request.method == 'DELETE':
-            request.user.avatar.delete()
-            return Response('Avatar is deleted',
-                            status=status.HTTP_204_NO_CONTENT)
+        request.user.avatar.delete()
+        return Response('Avatar is deleted',
+                        status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=['post', ], detail=False, url_path='set_password',
             permission_classes=[IsAuthenticated],
@@ -90,8 +81,8 @@ class CustomUserViewSet(UserViewSet):
             permission_classes=[IsAuthenticated])
     def subscribe(self, request, **kwargs):
         author = get_object_or_404(User, id=kwargs['id'])
+        subscriber = get_object_or_404(User, id=self.request.user.id)
         if request.method == 'POST':
-            subscriber = get_object_or_404(User, id=self.request.user.id)
             serializer = SubscribeCreateSerializer(
                 data={'author': author.id}, context={'request': request})
             serializer.is_valid(raise_exception=True)
@@ -101,21 +92,18 @@ class CustomUserViewSet(UserViewSet):
                 context={'request': request}).data,
                 status=status.HTTP_201_CREATED)
 
-        if request.method == 'DELETE':
-            if not User.objects.filter(id=kwargs['id']).exists():
-                return Response({'errors': 'Такого автора не существует.'},
-                                status=status.HTTP_404_NOT_FOUND)
-            author = User.objects.get(id=kwargs['id'])
-            subscriber = User.objects.get(id=self.request.user.id)
-            try:
-                obj = Subscription.objects.get(
-                    author=author, subscriber=subscriber)
-                obj.delete()
-                return Response({'status': 'Автор удален из подписок'},
-                                status=status.HTTP_204_NO_CONTENT)
-            except ObjectDoesNotExist:
-                return Response({'status': 'Вы не подписаны на этого автора'},
-                                status=status.HTTP_400_BAD_REQUEST)
+        if not User.objects.filter(id=kwargs['id']).exists():
+            return Response({'errors': 'Такого автора не существует.'},
+                            status=status.HTTP_404_NOT_FOUND)
+        try:
+            obj = Subscription.objects.get(
+                author=author, subscriber=subscriber)
+            obj.delete()
+            return Response({'status': 'Автор удален из подписок'},
+                            status=status.HTTP_204_NO_CONTENT)
+        except ObjectDoesNotExist:
+            return Response({'status': 'Вы не подписаны на этого автора'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['get', ], detail=False, url_path='subscriptions',
             permission_classes=[IsAuthenticated],
@@ -195,7 +183,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             serializer = ShortRecipeSerializer(recipe)
             ShoppingCart.objects.get_or_create(recipe=recipe,
                                                user=self.request.user)
-            print(serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
@@ -250,7 +237,6 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 class IngredientViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                         viewsets.GenericViewSet):
-
     queryset = Ingredient.objects.all()
     pagination_class = None
     http_method_names = ['get', 'list', 'retrieve']
