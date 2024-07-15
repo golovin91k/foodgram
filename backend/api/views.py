@@ -95,8 +95,7 @@ class CustomUserViewSet(UserViewSet):
             serializer = SubscribeSerializer(
                 author, data=request.data, context={"request": request})
             serializer.is_valid(raise_exception=True)
-            Subscription.objects.get_or_create(author=author,
-                                               subscriber=subscriber)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':

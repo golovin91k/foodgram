@@ -179,7 +179,7 @@ class RecipeGetSerializer(serializers.ModelSerializer):
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
-    """Сериалиазатор создания и изменения рецепта."""
+    """Сериализатор создания и изменения рецепта."""
     tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all())
     image = Base64ImageField()
@@ -264,7 +264,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         self.create_ingredients_for_recipe(
             recipe=instance, ingredients=ingredients)
         instance.save()
-        # return super(MySerializer, self).update(instance, validated_data)
         return instance
 
     def to_representation(self, instance):
@@ -272,6 +271,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
 
 class ShortRecipeSerializer(serializers.ModelSerializer):
+    """Сериализатор краткого представления рецепта."""
     id = serializers.IntegerField()
     name = serializers.CharField()
     image = Base64ImageField()
@@ -282,7 +282,8 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'image', 'cooking_time',)
 
 
-class SubscriptionSerializer(serializers.ModelSerializer):
+class SubscriptionSerializer(SpecialUserSerializer):
+    """Сериализатор подписки пользователя."""
     email = serializers.ReadOnlyField(source='author.email',)
     id = serializers.ReadOnlyField(source='author.id',)
     username = serializers.ReadOnlyField(source='author.username',)
@@ -312,46 +313,46 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         author_recipes = Recipe.objects.filter(author=obj.author)
         request_recipes_limit = self.context.get('request').GET
         recipes_limit = request_recipes_limit.get('recipes_limit')
-        if recipes_limit:
-            author_recipes = author_recipes[:int(recipes_limit)]
-        return ShortRecipeSerializer(author_recipes,
-                                     many=True, read_only=True).data
+        try:
+            if int(recipes_limit):
+                author_recipes = author_recipes[:int(recipes_limit)]
+                return ShortRecipeSerializer(author_recipes,
+                                             many=True, read_only=True).data
+        except ValueError:
+            raise ValueError('Значение recipes_limit должно быть числом.')
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj.author).count()
 
 
 class SubscribeSerializer(serializers.ModelSerializer):
-    is_subscribed = serializers.SerializerMethodField()
+    email = serializers.ReadOnlyField()
+    id = serializers.ReadOnlyField()
+    username = serializers.ReadOnlyField()
+    first_name = serializers.ReadOnlyField()
+    last_name = serializers.ReadOnlyField()
+    avatar = Base64ImageField(read_only=True)
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
-    email = serializers.ReadOnlyField()
-    username = serializers.ReadOnlyField()
+   # is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
-        model = User
-        fields = ('email', 'id', 'username', 'first_name',
-                  'last_name', 'is_subscribed', 'recipes', 'avatar',
-                  'recipes_count')
+        model = Subscription
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'avatar', 'recipes', 'recipes_count')
 
     def validate(self, data):
         author = self.instance
         subscriber = self.context['request'].user
+        print(author)
+        print(subscriber)
         if author == subscriber:
             raise serializers.ValidationError
         if Subscription.objects.filter(author=author,
                                        subscriber=subscriber).exists():
+            print('NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN')
             raise ValidationError()
         return data
-
-    def get_is_subscribed(self, obj):
-        current_user = self.context['request'].user
-        if current_user.is_authenticated and current_user != obj:
-            if Subscription.objects.filter(author=obj,
-                                           subscriber=current_user):
-                return True
-            return False
-        return False
 
     def get_recipes(self, obj):
         author_recipes = Recipe.objects.filter(author=obj)
@@ -364,3 +365,10 @@ class SubscribeSerializer(serializers.ModelSerializer):
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj).count()
+
+    def create(self, validated_data):
+        print('CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC')
+        author = self.instance
+        subscriber = self.context['request'].user
+        print('SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS')
+        return Subscription.objects.create(author=author, subscriber=subscriber)
