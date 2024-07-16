@@ -36,19 +36,15 @@ class CustomUserViewSet(UserViewSet):
     serializer_class = SpecialUserSerializer
     pagination_class = CustomPaginator
 
+    def get_queryset(self):
+        if self.action == 'list':
+            return User.objects.all()
+        return super().get_queryset()
+
     def get_permissions(self):
-        if self.action == "me":
+        if self.action == 'me':
             self.permission_classes = settings.PERMISSIONS.me
         return super().get_permissions()
-
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return SpecialUserCreateSerializer
-        elif self.action == 'avatar':
-            return AvatarSerializer
-        elif self.action == 'set_password':
-            return SetPasswordSerializer
-        return SpecialUserSerializer
 
     @action(methods=['put', 'delete'], detail=False, url_path='me/avatar',
             permission_classes=[IsAuthenticated])
@@ -88,7 +84,7 @@ class CustomUserViewSet(UserViewSet):
             serializer.is_valid(raise_exception=True)
             subscription = serializer.save(subscriber=request.user)
             return Response(SubscribeReturnSerializer(
-                subscription,
+                subscription.author,
                 context={'request': request}).data,
                 status=status.HTTP_201_CREATED)
 

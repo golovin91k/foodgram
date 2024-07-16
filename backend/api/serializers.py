@@ -54,7 +54,7 @@ class SpecialUserSerializer(UserSerializer):
         model = User
         fields = (
             'email', 'id', 'username', 'first_name', 'last_name',
-            'is_subscribed', 'avatar')
+            'avatar', 'is_subscribed')
 
     def get_is_subscribed(self, obj):
         current_user = self.context['request'].user
@@ -265,38 +265,22 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'image', 'cooking_time',)
 
 
-class SubscribeReturnSerializer(serializers.ModelSerializer):
+class SubscribeReturnSerializer(SpecialUserSerializer):
     """
     Сериализатор для отображения объекта пользователя после
     создания подписки на этого пользователя.
     """
-    email = serializers.ReadOnlyField(source='author.email')
-    id = serializers.ReadOnlyField(source='author.id')
-    username = serializers.ReadOnlyField(source='author.username')
-    first_name = serializers.ReadOnlyField(source='author.first_name')
-    last_name = serializers.ReadOnlyField(source='author.last_name')
-    is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
     class Meta:
-        model = Subscription
+        model = User
         fields = (
             'email', 'id', 'username', 'first_name', 'last_name',
             'is_subscribed', 'recipes', 'recipes_count')
 
-    def get_is_subscribed(self, obj):
-        current_user = self.context['request'].user
-        if current_user.is_authenticated and current_user != obj.author:
-            if Subscription.objects.filter(
-                    author=obj.author,
-                    subscriber=current_user):
-                return True
-            return False
-        return False
-
     def get_recipes(self, obj):
-        author_recipes = Recipe.objects.filter(author=obj.author)
+        author_recipes = Recipe.objects.filter(author=obj)
         request_recipes_limit = self.context.get('request').GET
         recipes_limit = request_recipes_limit.get('recipes_limit')
         try:
@@ -310,7 +294,7 @@ class SubscribeReturnSerializer(serializers.ModelSerializer):
             author_recipes, many=True, read_only=True).data
 
     def get_recipes_count(self, obj):
-        return Recipe.objects.filter(author=obj.author).count()
+        return Recipe.objects.filter(author=obj).count()
 
 
 class SubscribeCreateSerializer(serializers.ModelSerializer):

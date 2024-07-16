@@ -10,3 +10,6 @@ class MyUser(AbstractUser):
     username = models.CharField(max_length=150, unique=True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name', 'password', 'username']
+
+    class Meta:
+        ordering = ['id']
