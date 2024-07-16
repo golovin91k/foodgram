@@ -264,6 +264,7 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time',)
 
+    def validate(self, data)
 
 class SubscribeReturnSerializer(SpecialUserSerializer):
     """
@@ -277,7 +278,7 @@ class SubscribeReturnSerializer(SpecialUserSerializer):
         model = User
         fields = (
             'email', 'id', 'username', 'first_name', 'last_name',
-            'is_subscribed', 'recipes', 'recipes_count')
+            'is_subscribed', 'recipes', 'recipes_count', 'avatar')
 
     def get_recipes(self, obj):
         author_recipes = Recipe.objects.filter(author=obj)
@@ -299,6 +300,30 @@ class SubscribeReturnSerializer(SpecialUserSerializer):
 
 class SubscribeCreateSerializer(serializers.ModelSerializer):
     """Сериализатор создания подписки на пользователя."""
+    author = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    subscriber = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = Subscription
+        fields = ('author', 'subscriber')
+
+    def validate(self, data):
+        author = data['author']
+        subscriber = self.context['request'].user
+        if author == subscriber:
+            raise serializers.ValidationError(
+                {'Нельзя подписаться на самого себя'})
+        if Subscription.objects.filter(
+                author=author, subscriber=subscriber).exists():
+            raise ValidationError({'Вы уже подписаны на этого пользователя'})
+        return data
+
+    def create(self, validated_data):
+        return Subscription.objects.create(**validated_data)
+
+
+class ShoppingCartCreateSerializer(serializers.ModelSerializer):
+    """Сериализатор добавления рецепта в список покупок."""
     author = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
     subscriber = serializers.PrimaryKeyRelatedField(read_only=True)
 

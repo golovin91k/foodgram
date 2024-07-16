@@ -77,7 +77,6 @@ class CustomUserViewSet(UserViewSet):
             permission_classes=[IsAuthenticated])
     def subscribe(self, request, **kwargs):
         author = get_object_or_404(User, id=kwargs['id'])
-        subscriber = get_object_or_404(User, id=self.request.user.id)
         if request.method == 'POST':
             serializer = SubscribeCreateSerializer(
                 data={'author': author.id}, context={'request': request})
@@ -94,7 +93,7 @@ class CustomUserViewSet(UserViewSet):
                 status=status.HTTP_404_NOT_FOUND)
         try:
             obj = Subscription.objects.get(
-                author=author, subscriber=subscriber)
+                author=author, subscriber=request.user)
             obj.delete()
             return Response({'status': 'Автор удален из подписок'},
                             status=status.HTTP_204_NO_CONTENT)
@@ -106,10 +105,13 @@ class CustomUserViewSet(UserViewSet):
             permission_classes=[IsAuthenticated],
             pagination_class=CustomPaginator)
     def subscriptions(self, request):
-        user = self.request.user
-        user_subscriptions = Subscription.objects.filter(subscriber=user)
-        paginate_user_subscriptions = self.paginate_queryset(
-            user_subscriptions)
+        authors_id = self.request.user.sub_authors.all().values_list(
+            'author', flat=True)
+        authors_queryset = []
+        for id in authors_id:
+            authors_queryset.append(get_object_or_404(User, pk=id))
+        print(authors_queryset)
+        paginate_user_subscriptions = self.paginate_queryset(authors_queryset)
         serializer = SubscribeReturnSerializer(
             paginate_user_subscriptions,
             context={'request': request},
