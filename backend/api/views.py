@@ -248,5 +248,9 @@ class IngredientViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
 
 @ require_http_methods(["GET", ])
 def shortlinkview(request, link):
-    shortlink_obj = ShortLink.objects.get(shortlink=link)
-    return redirect(f'/recipes/{shortlink_obj.recipe.id}')
+    try:
+        shortlink_obj = ShortLink.objects.get(shortlink=link)
+        return redirect(f'/recipes/{shortlink_obj.recipe.id}')
+    except ObjectDoesNotExist:
+        return Response(
+            {'status': 'Такой короткой ссылки на рецепт не существует'})

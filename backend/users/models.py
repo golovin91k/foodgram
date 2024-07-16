@@ -10,11 +10,3 @@ class MyUser(AbstractUser):
     username = models.CharField(max_length=150, unique=True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name', 'password', 'username']
-
-
-class UserSubscriber(models.Model):
-    """Модель подписки пользователей."""
-    user = models.ForeignKey(
-        MyUser, on_delete=models.CASCADE, related_name="following")
-    subscriber = models.ForeignKey(
-        MyUser, on_delete=models.CASCADE, related_name="followers")
