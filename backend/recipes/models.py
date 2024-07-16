@@ -97,12 +97,6 @@ class BaseModelRecipeUser(models.Model):
 
 class FavoriteRecipe(BaseModelRecipeUser):
     """Модель израбранного рецапта."""
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-                               verbose_name='Рецепты',
-                               related_name='favorite_recipe', )
-    user = models.ForeignKey(User, on_delete=models.CASCADE,
-                             verbose_name='Пользователи',
-                             related_name='favorite', )
 
     class Meta:
         verbose_name = 'Избранный рецепт'
@@ -111,12 +105,6 @@ class FavoriteRecipe(BaseModelRecipeUser):
 
 class ShoppingCart(BaseModelRecipeUser):
     """Модель списка покупок."""
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-                               verbose_name='Рецепты',
-                               related_name='shopcart_recipe', )
-    user = models.ForeignKey(User, on_delete=models.CASCADE,
-                             verbose_name='Пользователи',
-                             related_name='recipes_in_shopcart', )
 
     class Meta:
         verbose_name = 'Список покупок'
