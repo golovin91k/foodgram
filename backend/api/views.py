@@ -23,7 +23,7 @@ from recipes.models import (
     Recipe, Ingredient, FavoriteRecipe, Tag, ShortLink,
     ShoppingCart, Subscription)
 from .pagination import CustomPaginator
-from .permissions import IsOwnerOrReadOnly
+from .permissions import IsCurrentUserOrAdminOrReadOnly
 from .filters import RecipeFilter
 from .utils import sum_ingredients
 
@@ -123,7 +123,7 @@ class CustomUserViewSet(UserViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    permission_classes = [AllowAny] #(IsOwnerOrReadOnly, IsAuthenticated)
+    permission_classes = [IsCurrentUserOrAdminOrReadOnly]
     pagination_class = CustomPaginator
     http_method_names = [
         'get', 'post', 'patch',
