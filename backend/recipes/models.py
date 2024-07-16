@@ -40,20 +40,20 @@ class Recipe(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='recipes',
         verbose_name='Авторы')
-    ingredients = models.ManyToManyField(Ingredient,
-                                         through='IngredientInRecipe',
-                                         through_fields=(
-                                             'recipe', 'ingredient'),
-                                         related_name='ingredients',
-                                         verbose_name='Ингредиенты')
+    ingredients = models.ManyToManyField(
+        Ingredient, through='IngredientInRecipe',
+        through_fields=('recipe', 'ingredient'),
+        related_name='ingredients',
+        verbose_name='Ингредиенты')
     name = models.CharField('Название', max_length=256)
-    image = models.ImageField(upload_to='recipes/images',
-                              verbose_name='Изображение')
+    image = models.ImageField(
+        upload_to='recipes/images',
+        verbose_name='Изображение')
     text = models.TextField('Описание')
     cooking_time = models.IntegerField(
         'Время приготовления', validators=[validate_cooking_time])
-    pub_date = models.DateTimeField('Дата публикации',
-                                    auto_now_add=True)
+    pub_date = models.DateTimeField(
+        'Дата публикации', auto_now_add=True)
 
     class Meta:
         ordering = ['-pub_date']

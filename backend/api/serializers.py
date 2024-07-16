@@ -8,8 +8,9 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from recipes.models import (Recipe, Tag, Ingredient, IngredientInRecipe,
-                            FavoriteRecipe, Subscription, ShoppingCart,)
+from recipes.models import (
+    Recipe, Tag, Ingredient, IngredientInRecipe,
+    FavoriteRecipe, Subscription, ShoppingCart, )
 from .utils import create_shortlink
 from .constans import MINIMUM_AMOUNT, MINIMUM_COOKING_TIME
 
@@ -32,8 +33,8 @@ class SpecialUserCreateSerializer(UserCreateSerializer):
     """Сериализатор для создания объекта пользователя."""
     class Meta(UserCreateSerializer.Meta):
         model = User
-        fields = ('email', 'id', 'username',
-                  'first_name', 'last_name', 'password')
+        fields = (
+            'email', 'id', 'username', 'first_name', 'last_name', 'password')
         extra_kwargs = {
             'first_name': {'required': True, 'allow_blank': False},
             'last_name': {'required': True, 'allow_blank': False},
@@ -51,14 +52,15 @@ class SpecialUserSerializer(UserSerializer):
 
     class Meta(UserSerializer.Meta):
         model = User
-        fields = ('email', 'id', 'username',
-                  'first_name', 'last_name',
-                  'is_subscribed', 'avatar')
+        fields = (
+            'email', 'id', 'username', 'first_name', 'last_name',
+            'is_subscribed', 'avatar')
 
     def get_is_subscribed(self, obj):
         current_user = self.context['request'].user
-        return (current_user.is_authenticated and current_user != obj
-                and obj.subscribers.filter(subscriber=current_user).exists())
+        return (
+            current_user.is_authenticated and current_user != obj
+            and obj.subscribers.filter(subscriber=current_user).exists())
 
 
 class AvatarSerializer(serializers.Serializer):
@@ -153,11 +155,10 @@ class RecipeGetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = ('id', 'tags',
-                  'author', 'ingredients',
-                  'is_favorited', 'is_in_shopping_cart',
-                  'name', 'image',
-                  'text', 'cooking_time')
+        fields = (
+            'id', 'tags', 'author', 'ingredients',
+            'is_favorited', 'is_in_shopping_cart',
+            'name', 'image', 'text', 'cooking_time')
 
     def get_is_favorited(self, obj):
         current_user = self.context['request'].user
@@ -188,8 +189,9 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = ('tags', 'author', 'name', 'image',
-                  'text', 'cooking_time', 'ingredients')
+        fields = (
+            'tags', 'author', 'name', 'image',
+            'text', 'cooking_time', 'ingredients')
 
     def validate_ingredients(self, value):
         if not value:
@@ -288,8 +290,8 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
         try:
             if int(recipes_limit):
                 author_recipes = author_recipes[:int(recipes_limit)]
-                return ShortRecipeSerializer(author_recipes,
-                                             many=True, read_only=True).data
+                return ShortRecipeSerializer(
+                    author_recipes, many=True, read_only=True).data
         except ValueError:
             raise ValueError('Значение recipes_limit должно быть числом.')
 
@@ -313,14 +315,16 @@ class SubscribeReturnSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subscription
-        fields = ('email', 'id', 'username', 'first_name',
-                  'last_name', 'is_subscribed', 'recipes', 'recipes_count')
+        fields = (
+            'email', 'id', 'username', 'first_name', 'last_name',
+            'is_subscribed', 'recipes', 'recipes_count')
 
     def get_is_subscribed(self, obj):
         current_user = self.context['request'].user
         if current_user.is_authenticated and current_user != obj.author:
-            if Subscription.objects.filter(author=obj.author,
-                                           subscriber=current_user):
+            if Subscription.objects.filter(
+                    author=obj.author,
+                    subscriber=current_user):
                 return True
             return False
         return False
@@ -332,12 +336,12 @@ class SubscribeReturnSerializer(serializers.ModelSerializer):
         try:
             if recipes_limit is not None and isinstance(recipes_limit, int):
                 author_recipes = author_recipes[:int(recipes_limit)]
-                return ShortRecipeSerializer(author_recipes,
-                                             many=True, read_only=True).data
+                return ShortRecipeSerializer(
+                    author_recipes, many=True, read_only=True).data
         except ValueError:
             raise ValueError('Значение recipes_limit должно быть числом.')
-        return ShortRecipeSerializer(author_recipes,
-                                     many=True, read_only=True).data
+        return ShortRecipeSerializer(
+            author_recipes, many=True, read_only=True).data
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj.author).count()
@@ -358,8 +362,8 @@ class SubscribeCreateSerializer(serializers.ModelSerializer):
         if author == subscriber:
             raise serializers.ValidationError(
                 {'Нельзя подписаться на самого себя'})
-        if Subscription.objects.filter(author=author,
-                                       subscriber=subscriber).exists():
+        if Subscription.objects.filter(
+                author=author, subscriber=subscriber).exists():
             raise ValidationError({'Вы уже подписаны на этого пользователя'})
         return data
 

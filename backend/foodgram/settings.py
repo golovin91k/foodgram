@@ -60,7 +60,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'foodgram.wsgi.application'
 
-
+"""
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -71,8 +71,8 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT', 5432)
     }
 }
-
 """
+
 #БД для локальной отладки приложения.
 
 DATABASES = {
@@ -81,7 +81,7 @@ DATABASES = {
         'NAME': str(os.path.join(BASE_DIR, "db.sqlite3"))
     }
 }
-"""
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {

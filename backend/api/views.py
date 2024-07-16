@@ -14,14 +14,14 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from .serializers import (SpecialUserCreateSerializer, TagSerializer,
-                          SpecialUserSerializer, AvatarSerializer,
-                          IngredientSerializer, RecipeCreateSerializer,
-                          RecipeGetSerializer, SubscribeCreateSerializer,
-                          ShortRecipeSerializer, SetPasswordSerializer,
-                          SubscribeReturnSerializer)
-from recipes.models import (Recipe, Ingredient, FavoriteRecipe, Tag, ShortLink,
-                            ShoppingCart, Subscription)
+from .serializers import (
+    SpecialUserCreateSerializer, TagSerializer, SpecialUserSerializer,
+    AvatarSerializer, IngredientSerializer, RecipeCreateSerializer,
+    RecipeGetSerializer, SubscribeCreateSerializer, ShortRecipeSerializer,
+    SetPasswordSerializer, SubscribeReturnSerializer)
+from recipes.models import (
+    Recipe, Ingredient, FavoriteRecipe, Tag, ShortLink,
+    ShoppingCart, Subscription)
 from .pagination import CustomPaginator
 from .permissions import IsOwnerOrReadOnly
 from .filters import RecipeFilter
@@ -57,15 +57,15 @@ class CustomUserViewSet(UserViewSet):
             serializer = AvatarSerializer(
                 data=request.data, instance=request.user)
             if serializer.is_valid():
-                serializer.save(validated_data=request.data,
-                                instance=request.user)
+                serializer.save(
+                    validated_data=request.data, instance=request.user)
                 return Response(serializer.data)
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         request.user.avatar.delete()
-        return Response('Avatar is deleted',
-                        status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            'Avatar is deleted', status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=['post', ], detail=False, url_path='set_password',
             permission_classes=[IsAuthenticated],
@@ -93,8 +93,9 @@ class CustomUserViewSet(UserViewSet):
                 status=status.HTTP_201_CREATED)
 
         if not User.objects.filter(id=kwargs['id']).exists():
-            return Response({'errors': 'Такого автора не существует.'},
-                            status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {'errors': 'Такого автора не существует.'},
+                status=status.HTTP_404_NOT_FOUND)
         try:
             obj = Subscription.objects.get(
                 author=author, subscriber=subscriber)
@@ -124,8 +125,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
     pagination_class = CustomPaginator
-    http_method_names = ['get', 'post', 'patch',
-                         'delete', 'list', 'retrieve']
+    http_method_names = [
+        'get', 'post', 'patch',
+        'delete', 'list', 'retrieve']
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
@@ -141,11 +143,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             user = self.request.user
             if not Recipe.objects.filter(id=pk).exists():
-                return Response({'errors': 'Такого рецепта не существует.'},
-                                status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    {'errors': 'Такого рецепта не существует.'},
+                    status=status.HTTP_404_NOT_FOUND)
             recipe = Recipe.objects.get(id=pk)
-            if FavoriteRecipe.objects.filter(user=user,
-                                             recipe=recipe).exists():
+            if FavoriteRecipe.objects.filter(
+                    user=user,
+                    recipe=recipe).exists():
                 return Response({'errors': ('Этот рецепт уже добавлен'
                                             'в список избранного')},
                                 status=status.HTTP_400_BAD_REQUEST)
@@ -173,16 +177,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             user = self.request.user
             if not Recipe.objects.filter(id=pk).exists():
-                return Response({'errors': 'Такого рецепта не существует.'},
-                                status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    {'errors': 'Такого рецепта не существует.'},
+                    status=status.HTTP_404_NOT_FOUND)
             recipe = Recipe.objects.get(id=pk)
             if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
                 return Response({'errors': ('Этот рецепт уже добавлен'
                                             'в список покупок')},
                                 status=status.HTTP_400_BAD_REQUEST)
             serializer = ShortRecipeSerializer(recipe)
-            ShoppingCart.objects.get_or_create(recipe=recipe,
-                                               user=self.request.user)
+            ShoppingCart.objects.get_or_create(
+                recipe=recipe, user=self.request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
