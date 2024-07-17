@@ -47,6 +47,7 @@ sudo apt install docker-compose-plugin
 ```
 2. Создайте на удаленном сервере папку /foodgram и в неё скопируйте следующие файлы из корневой папки проекта: </br>
 docker-compose.production.yml</br>
+nginx.conf</br>
 
 3. В папке /foodgram создайте файл .env со следующим содержанием (пример заполнения):
 ```
