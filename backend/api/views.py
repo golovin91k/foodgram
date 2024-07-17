@@ -190,8 +190,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get', ],
             permission_classes=(IsAuthenticated, ))
     def download_shopping_cart(self, request):
-        recipes_in_user_shopping_cart = ShoppingCart.objects.filter(
-            user=self.request.user)
+        recipes_in_user_shopping_cart = Recipe.objects.filter(
+            shoppingcart__user=self.request.user)
         ingredients_dict = sum_ingredients(recipes_in_user_shopping_cart)
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = ('attachment;'
