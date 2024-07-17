@@ -29,10 +29,10 @@ class Tag(models.Model):
 
 class Ingredient(models.Model):
     """Модель ингредиента."""
-    name = models.CharField('Название', max_length=INGREDIENT_NAME_MAX_LENGTH)
+    name = models.CharField(
+        'Название', max_length=INGREDIENT_NAME_MAX_LENGTH, unique=True)
     measurement_unit = models.CharField(
-        'Единица измерения', max_length=INGREDIENT_MEAS_UNIT_MAX_LENGTH,
-        unique=True)
+        'Единица измерения', max_length=INGREDIENT_MEAS_UNIT_MAX_LENGTH)
 
     class Meta:
         verbose_name = 'Ингредиент'
