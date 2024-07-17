@@ -1,6 +1,11 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 
+from .constans import (
+    TAG_NAME_MAX_LENGTH, TAG_SLUG_MAX_LENGTH, INGREDIENT_NAME_MAX_LENGTH,
+    INGREDIENT_MEAS_UNIT_MAX_LENGTH, RECIPE_NAME_MAX_LENGTH,
+    SHORTLINK_MAX_LENTH
+)
 from .validators import validate_amount, validate_cooking_time
 
 
@@ -9,8 +14,10 @@ User = get_user_model()
 
 class Tag(models.Model):
     """Модель тега."""
-    name = models.CharField('Название', max_length=32, unique=True)
-    slug = models.SlugField('Слаг', max_length=32, unique=True)
+    name = models.CharField(
+        'Название', max_length=TAG_NAME_MAX_LENGTH, unique=True)
+    slug = models.SlugField(
+        'Слаг', max_length=TAG_SLUG_MAX_LENGTH, unique=True)
 
     class Meta:
         verbose_name = 'Тег'
@@ -22,9 +29,10 @@ class Tag(models.Model):
 
 class Ingredient(models.Model):
     """Модель ингредиента."""
-    name = models.CharField('Название', max_length=128)
-    measurement_unit = models.CharField('Единица измерения',
-                                        max_length=64, unique=True)
+    name = models.CharField('Название', max_length=INGREDIENT_NAME_MAX_LENGTH)
+    measurement_unit = models.CharField(
+        'Единица измерения', max_length=INGREDIENT_MEAS_UNIT_MAX_LENGTH,
+        unique=True)
 
     class Meta:
         verbose_name = 'Ингредиент'
@@ -45,7 +53,7 @@ class Recipe(models.Model):
         through_fields=('recipe', 'ingredient'),
         related_name='ingredients',
         verbose_name='Ингредиенты')
-    name = models.CharField('Название', max_length=256)
+    name = models.CharField('Название', max_length=RECIPE_NAME_MAX_LENGTH)
     image = models.ImageField(
         upload_to='recipes/images',
         verbose_name='Изображение')
@@ -138,7 +146,8 @@ class ShortLink(models.Model):
         Recipe, on_delete=models.CASCADE,
         related_name='shortlink', unique=True, verbose_name='Рецепт')
     shortlink = models.CharField(
-        max_length=50, unique=True, verbose_name='Уникальная ссылка')
+        max_length=SHORTLINK_MAX_LENTH, unique=True,
+        verbose_name='Уникальная ссылка')
 
     class Meta:
         verbose_name = 'Короткая ссылка'

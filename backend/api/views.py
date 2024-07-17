@@ -15,10 +15,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .serializers import (
-    SpecialUserCreateSerializer, TagSerializer, SpecialUserSerializer,
-    AvatarSerializer, IngredientSerializer, RecipeCreateSerializer,
-    RecipeGetSerializer, SubscribeCreateSerializer, ShortRecipeSerializer,
-    SetPasswordSerializer, SubscribeReturnSerializer, ShoppingCartCreateSerializer, FavoriteRecipeCreateSerializer)
+    TagSerializer, SpecialUserSerializer, AvatarSerializer,
+    IngredientSerializer, RecipeCreateSerializer, RecipeGetSerializer,
+    SubscribeCreateSerializer, ShortRecipeSerializer, SetPasswordSerializer,
+    SubscribeReturnSerializer, ShoppingCartCreateSerializer,
+    FavoriteRecipeCreateSerializer)
 from recipes.models import (
     Recipe, Ingredient, FavoriteRecipe, Tag, ShortLink,
     ShoppingCart, Subscription)
@@ -185,7 +186,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         except ObjectDoesNotExist:
             return Response({'status': 'Этого рецепта нет в списке покупок.'},
                             status=status.HTTP_400_BAD_REQUEST)
-
 
     @action(detail=False, methods=['get', ],
             permission_classes=(IsAuthenticated, ))

@@ -12,7 +12,7 @@ from recipes.models import (
     Recipe, Tag, Ingredient, IngredientInRecipe,
     FavoriteRecipe, Subscription, ShoppingCart, )
 from .utils import create_shortlink
-from .constans import MINIMUM_AMOUNT, MINIMUM_COOKING_TIME
+from recipes.validators import validate_cooking_time, validate_amount
 
 
 User = get_user_model()
@@ -116,18 +116,11 @@ class IngredientInRecipeCreateSerializer(serializers.ModelSerializer):
     """
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all())
-    amount = serializers.IntegerField()
+    amount = serializers.IntegerField(validators=[validate_amount])
 
     class Meta:
         model = IngredientInRecipe
         fields = ('id', 'amount')
-
-    def validate_amount(self, value):
-        if value < MINIMUM_AMOUNT:
-            raise serializers.ValidationError(
-                {'Введено неверное количество ингредиента: '
-                 'количество ингредиента не может быть меньше единицы.'})
-        return value
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -179,6 +172,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
     ingredients = IngredientInRecipeCreateSerializer(many=True)
+    cooking_time = serializers.IntegerField(validators=[validate_cooking_time])
 
     class Meta:
         model = Recipe
@@ -210,12 +204,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     'В рецепт нельзя добавлять одинаковые ингредиенты.')
             ingredient_list.append(ingr_obj)
-        return value
-
-    def validate_cooking_time(self, value):
-        if value < MINIMUM_COOKING_TIME:
-            raise serializers.ValidationError(
-                'Время приготовления должно быть больше 0')
         return value
 
     def create_ingredients_for_recipe(self, recipe, ingredients):
