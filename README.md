@@ -1,4 +1,4 @@
-# KITTYGRAM
+# FOODGRAM
 ![example workflow](https://github.com/golovin91k/foodgram/workflows/Main%20Foodgram%20workflow/badge.svg)
 
 ## Описание проекта
