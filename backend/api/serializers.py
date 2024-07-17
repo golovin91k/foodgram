@@ -330,8 +330,34 @@ class ShoppingCartCreateSerializer(serializers.ModelSerializer):
         model = ShoppingCart
         fields = ('recipe', 'user')
 
-   # def validate(self, data):
-   #     pass
+    def validate(self, data):
+        if ShoppingCart.objects.filter(
+                recipe=data['recipe'],
+                user=self.context['request'].user).exists():
+            raise ValidationError(
+                {'Этот рецепт уже добавлен в список покупок.'})
+        return data
 
     def create(self, validated_data):
         return ShoppingCart.objects.create(**validated_data)
+
+
+class FavoriteRecipeCreateSerializer(serializers.ModelSerializer):
+    """Сериализатор добавления рецепта в избранное."""
+    recipe = serializers.PrimaryKeyRelatedField(queryset=Recipe.objects.all())
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = FavoriteRecipe
+        fields = ('recipe', 'user')
+
+    def validate(self, data):
+        if FavoriteRecipe.objects.filter(
+                recipe=data['recipe'],
+                user=self.context['request'].user).exists():
+            raise ValidationError(
+                {'Этот рецепт уже добавлен в избранное.'})
+        return data
+
+    def create(self, validated_data):
+        return FavoriteRecipe.objects.create(**validated_data)
