@@ -3,7 +3,6 @@ import re
 
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
-# from django.core.exceptions import ObjectDoesNotExist
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -152,17 +151,15 @@ class RecipeGetSerializer(serializers.ModelSerializer):
         current_user = self.context['request'].user
         return (
             current_user.is_authenticated
-            and FavoriteRecipe.objects.filter(
-                user=current_user, recipe=obj).exists())
+            and current_user.favoriterecipe_set.all().filter(
+                recipe=obj).exists())
 
     def get_is_in_shopping_cart(self, obj):
         current_user = self.context['request'].user
-        if current_user.is_authenticated:
-            if ShoppingCart.objects.filter(user=current_user, recipe=obj):
-                return True
-            else:
-                return False
-        return False
+        return (
+            current_user.is_authenticated
+            and current_user.shoppingcart_set.all().filter(
+                recipe=obj).exists())
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):

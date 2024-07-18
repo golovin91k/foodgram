@@ -2,7 +2,7 @@ import random
 import string
 
 from recipes.models import ShortLink
-from .constans import LEN_SHORT_LINK
+from recipes.constans import LEN_SHORT_LINK
 
 
 def check_shortlink(recipe, shortlink):
