@@ -85,29 +85,20 @@ class CustomUserViewSet(UserViewSet):
             serializer.save(subscriber=request.user)
             return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
-        if not User.objects.filter(id=kwargs['id']).exists():
-            return Response(
-                {'errors': 'Такого автора не существует.'},
-                status=status.HTTP_404_NOT_FOUND)
-        try:
-            obj = Subscription.objects.get(
-                author=author, subscriber=request.user)
-            obj.delete()
-            return Response({'status': 'Автор удален из подписок'},
-                            status=status.HTTP_204_NO_CONTENT)
-        except ObjectDoesNotExist:
-            return Response({'status': 'Вы не подписаны на этого автора'},
-                            status=status.HTTP_400_BAD_REQUEST)
+        obj = author.subscribers.all().filter(subscriber=request.user)
+        obj.delete()
+        return Response({'status': 'Автор удален из подписок'},
+                        status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=['get', ], detail=False, url_path='subscriptions',
             permission_classes=[IsAuthenticated],
             pagination_class=CustomPaginator)
     def subscriptions(self, request):
-        authors_id = self.request.user.sub_authors.all().values_list(
-            'author', flat=True)
+        subscription_objs = Subscription.objects.select_related(
+            'author').all().filter(subscriber=self.request.user)
         authors_queryset = []
-        for id in authors_id:
-            authors_queryset.append(get_object_or_404(User, pk=id))
+        for obj in subscription_objs:
+            authors_queryset.append(obj.author)
         paginate_user_subscriptions = self.paginate_queryset(authors_queryset)
         serializer = SubscribeReturnSerializer(
             paginate_user_subscriptions,
@@ -127,7 +118,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     def get_serializer_class(self):
-
         if self.action in ('create', 'partial_update'):
             return RecipeCreateSerializer
         return RecipeGetSerializer
@@ -143,15 +133,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
-        try:
-            obj = FavoriteRecipe.objects.get(
-                recipe=recipe, user=request.user)
-            obj.delete()
-            return Response({'status': 'Рецепт удален из избранного.'},
-                            status=status.HTTP_204_NO_CONTENT)
-        except ObjectDoesNotExist:
-            return Response({'status': 'Этого рецепта нет в избранном.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+        obj = recipe.favoriterecipe_set.all().filter(user=request.user)
+        obj.delete()
+        return Response({'status': 'Рецепт удален из избранного.'},
+                        status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=(IsAuthenticated,))
