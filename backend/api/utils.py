@@ -35,3 +35,22 @@ def sum_ingredients(recipes_in_user_shopping_cart):
                 ingr_dict[_.ingredient.name + ', '
                           + _.ingredient.measurement_unit] = _.amount
     return ingr_dict
+
+
+
+
+    
+
+    def favorite(self, request, pk=None):
+        recipe = get_object_or_404(Recipe, id=pk)
+        if request.method == 'POST':
+            serializer = FavoriteRecipeCreateSerializer(
+                data={'recipe': pk}, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+
+        obj = recipe.favoriterecipe_set.all().filter(user=request.user)
+        obj.delete()
+        return Response({'status': 'Рецепт удален из избранного.'},
+                        status=status.HTTP_204_NO_CONTENT)

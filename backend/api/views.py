@@ -122,6 +122,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeCreateSerializer
         return RecipeGetSerializer
 
+    def add_shopping_cart_favorite(self, request, serializer):
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user)
+        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=(IsAuthenticated,))
     def favorite(self, request, pk=None):
@@ -129,9 +134,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             serializer = FavoriteRecipeCreateSerializer(
                 data={'recipe': pk}, context={'request': request})
-            serializer.is_valid(raise_exception=True)
-            serializer.save(user=request.user)
-            return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+            return self.add_shopping_cart_favorite(request, serializer)
 
         obj = recipe.favoriterecipe_set.all().filter(user=request.user)
         obj.delete()
@@ -145,19 +148,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             serializer = ShoppingCartCreateSerializer(
                 data={'recipe': pk}, context={'request': request})
-            serializer.is_valid(raise_exception=True)
-            serializer.save(user=request.user)
-            return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+            return self.add_shopping_cart_favorite(request, serializer)
 
-        try:
-            obj = ShoppingCart.objects.get(
-                recipe=recipe, user=request.user)
-            obj.delete()
-            return Response({'status': 'Рецепт удален из списка покупок.'},
-                            status=status.HTTP_204_NO_CONTENT)
-        except ObjectDoesNotExist:
-            return Response({'status': 'Этого рецепта нет в списке покупок.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+        obj = recipe.shoppingcart_set.all().filter(user=request.user)
+        obj.delete()
+        return Response({'status': 'Рецепт удален из списка покупок.'},
+                        status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get', ],
             permission_classes=(IsAuthenticated, ))

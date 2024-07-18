@@ -152,3 +152,6 @@ class ShortLink(models.Model):
     class Meta:
         verbose_name = 'Короткая ссылка'
         verbose_name_plural = 'Короткие ссылки'
+
+    def __str__(self):
+        return f'{self.recipe} - {self.shortlink}'
