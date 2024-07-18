@@ -302,9 +302,11 @@ class SubscribeCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return Subscription.objects.create(**validated_data)
-    
+
     def to_representation(self, instance):
-        return RecipeGetSerializer(instance, context=self.context).data
+        return SubscribeReturnSerializer(
+            instance.author, context=self.context).data
+
 
 class ShoppingCartCreateSerializer(serializers.ModelSerializer):
     """Сериализатор добавления рецепта в список покупок."""
@@ -316,15 +318,18 @@ class ShoppingCartCreateSerializer(serializers.ModelSerializer):
         fields = ('recipe', 'user')
 
     def validate(self, data):
-        if ShoppingCart.objects.filter(
-                recipe=data['recipe'],
-                user=self.context['request'].user).exists():
+        user = self.context['request'].user
+        if user.shoppingcart_set.all().filter(recipe=data['recipe']).exists():
             raise ValidationError(
                 {'Этот рецепт уже добавлен в список покупок.'})
         return data
 
     def create(self, validated_data):
         return ShoppingCart.objects.create(**validated_data)
+
+    def to_representation(self, instance):
+        return ShortRecipeSerializer(
+            instance.recipe, context=self.context).data
 
 
 class FavoriteRecipeCreateSerializer(serializers.ModelSerializer):
@@ -337,12 +342,16 @@ class FavoriteRecipeCreateSerializer(serializers.ModelSerializer):
         fields = ('recipe', 'user')
 
     def validate(self, data):
-        if FavoriteRecipe.objects.filter(
-                recipe=data['recipe'],
-                user=self.context['request'].user).exists():
+        user = self.context['request'].user
+        if user.favoriterecipe_set.all().filter(
+                recipe=data['recipe']).exists():
             raise ValidationError(
                 {'Этот рецепт уже добавлен в избранное.'})
         return data
 
     def create(self, validated_data):
         return FavoriteRecipe.objects.create(**validated_data)
+
+    def to_representation(self, instance):
+        return ShortRecipeSerializer(
+            instance.recipe, context=self.context).data

@@ -82,11 +82,8 @@ class CustomUserViewSet(UserViewSet):
             serializer = SubscribeCreateSerializer(
                 data={'author': author.id}, context={'request': request})
             serializer.is_valid(raise_exception=True)
-            subscription = serializer.save(subscriber=request.user)
-            return Response(SubscribeReturnSerializer(
-                subscription.author,
-                context={'request': request}).data,
-                status=status.HTTP_201_CREATED)
+            serializer.save(subscriber=request.user)
+            return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
         if not User.objects.filter(id=kwargs['id']).exists():
             return Response(
@@ -143,13 +140,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             serializer = FavoriteRecipeCreateSerializer(
                 data={'recipe': pk}, context={'request': request})
             serializer.is_valid(raise_exception=True)
-            favorite = serializer.save(user=request.user)
-            favorite_data = ShortRecipeSerializer(
-                favorite.recipe,
-                context={'request': request}).data
-            return Response(
-                data=favorite_data,
-                status=status.HTTP_201_CREATED)
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
         try:
             obj = FavoriteRecipe.objects.get(
@@ -169,13 +161,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             serializer = ShoppingCartCreateSerializer(
                 data={'recipe': pk}, context={'request': request})
             serializer.is_valid(raise_exception=True)
-            shopping_cart = serializer.save(user=request.user)
-            shopping_cart_data = ShortRecipeSerializer(
-                shopping_cart.recipe,
-                context={'request': request}).data
-            return Response(
-                data=shopping_cart_data,
-                status=status.HTTP_201_CREATED)
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
         try:
             obj = ShoppingCart.objects.get(
