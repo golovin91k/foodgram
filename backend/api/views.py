@@ -17,12 +17,12 @@ from rest_framework.response import Response
 from .serializers import (
     TagSerializer, SpecialUserSerializer, AvatarSerializer,
     IngredientSerializer, RecipeCreateSerializer, RecipeGetSerializer,
-    SubscribeCreateSerializer, ShortRecipeSerializer, SetPasswordSerializer,
+    SubscribeCreateSerializer, SetPasswordSerializer,
     SubscribeReturnSerializer, ShoppingCartCreateSerializer,
     FavoriteRecipeCreateSerializer)
 from recipes.models import (
-    Recipe, Ingredient, FavoriteRecipe, Tag, ShortLink,
-    ShoppingCart, Subscription)
+    Recipe, Ingredient, Tag, ShortLink,
+    Subscription, IngredientInRecipe)
 from .pagination import CustomPaginator
 from .permissions import IsCurrentUserOrAdminOrReadOnly
 from .filters import RecipeFilter
@@ -158,9 +158,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get', ],
             permission_classes=(IsAuthenticated, ))
     def download_shopping_cart(self, request):
-        recipes_in_user_shopping_cart = Recipe.objects.filter(
-            shoppingcart__user=self.request.user)
-        ingredients_dict = sum_ingredients(recipes_in_user_shopping_cart)
+        ingredients_in_recipes = IngredientInRecipe.objects.select_related(
+            'ingredient').filter(recipe__shoppingcart__user=request.user)
+        ingredients_dict = sum_ingredients(ingredients_in_recipes)
+
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = ('attachment;'
                                            'filename="exported_data.csv"')

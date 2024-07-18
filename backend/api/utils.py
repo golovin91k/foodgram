@@ -23,34 +23,14 @@ def create_shortlink(recipe):
     obj.save
 
 
-def sum_ingredients(recipes_in_user_shopping_cart):
+def sum_ingredients(ingredients_in_recipes):
     ingr_dict = {}
-    for recipe in recipes_in_user_shopping_cart:
-        for _ in recipe.recipes.select_related('ingredient').all():
-            if ((_.ingredient.name + ', '
-                 + _.ingredient.measurement_unit) in ingr_dict.keys()):
-                ingr_dict[_.ingredient.name + ', '
-                          + _.ingredient.measurement_unit] += _.amount
-            else:
-                ingr_dict[_.ingredient.name + ', '
-                          + _.ingredient.measurement_unit] = _.amount
+    for ingr in ingredients_in_recipes:
+        if ((ingr.ingredient.name + ', '
+             + ingr.ingredient.measurement_unit) in ingr_dict.keys()):
+            ingr_dict[ingr.ingredient.name + ', '
+                      + ingr.ingredient.measurement_unit] += ingr.amount
+        else:
+            ingr_dict[ingr.ingredient.name + ', '
+                      + ingr.ingredient.measurement_unit] = ingr.amount
     return ingr_dict
-
-
-
-
-    
-
-    def favorite(self, request, pk=None):
-        recipe = get_object_or_404(Recipe, id=pk)
-        if request.method == 'POST':
-            serializer = FavoriteRecipeCreateSerializer(
-                data={'recipe': pk}, context={'request': request})
-            serializer.is_valid(raise_exception=True)
-            serializer.save(user=request.user)
-            return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
-
-        obj = recipe.favoriterecipe_set.all().filter(user=request.user)
-        obj.delete()
-        return Response({'status': 'Рецепт удален из избранного.'},
-                        status=status.HTTP_204_NO_CONTENT)
