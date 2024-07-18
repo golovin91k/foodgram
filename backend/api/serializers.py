@@ -268,13 +268,12 @@ class SubscribeReturnSerializer(SpecialUserSerializer):
         author_recipes = Recipe.objects.filter(author=obj)
         request_recipes_limit = self.context.get('request').GET
         recipes_limit = request_recipes_limit.get('recipes_limit')
-        try:
-            if recipes_limit is not None and isinstance(recipes_limit, int):
+        if recipes_limit is not None and isinstance(recipes_limit, int):
+            try:
                 author_recipes = author_recipes[:int(recipes_limit)]
-                return ShortRecipeSerializer(
-                    author_recipes, many=True, read_only=True).data
-        except ValueError:
-            raise ValueError('Значение recipes_limit должно быть числом.')
+            except serializers.ValidationError:
+                raise serializers.ValidationError(
+                    'Значение recipes_limit должно быть числом.')
         return ShortRecipeSerializer(
             author_recipes, many=True, read_only=True).data
 
@@ -297,14 +296,15 @@ class SubscribeCreateSerializer(serializers.ModelSerializer):
         if author == subscriber:
             raise serializers.ValidationError(
                 {'Нельзя подписаться на самого себя'})
-        if Subscription.objects.filter(
-                author=author, subscriber=subscriber).exists():
+        if subscriber.sub_authors.all().filter(author=author).exists():
             raise ValidationError({'Вы уже подписаны на этого пользователя'})
         return data
 
     def create(self, validated_data):
         return Subscription.objects.create(**validated_data)
-
+    
+    def to_representation(self, instance):
+        return RecipeGetSerializer(instance, context=self.context).data
 
 class ShoppingCartCreateSerializer(serializers.ModelSerializer):
     """Сериализатор добавления рецепта в список покупок."""
