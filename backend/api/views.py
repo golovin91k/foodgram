@@ -94,6 +94,9 @@ class CustomUserViewSet(UserViewSet):
             permission_classes=[IsAuthenticated],
             pagination_class=CustomPaginator)
     def subscriptions(self, request):
+        # Не знаю, как это улучшить. Нужна подсказка или образец.
+        # Очень тяжело даются запросы к связанным моделям.
+        # Нельзя так оставить?
         subscription_objs = Subscription.objects.select_related(
             'author').all().filter(subscriber=self.request.user)
         authors_queryset = []
@@ -174,13 +177,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get', ],
             permission_classes=(AllowAny,), url_path='get-link')
     def get_link(self, request, pk=None):
-        recipe = Recipe.objects.get(id=pk)
+        recipe = get_object_or_404(Recipe, id=pk)
         try:
             shortlink = ShortLink.objects.get(recipe=recipe)
             return Response({'short-link': request.META['HTTP_HOST']
                              + '/s/' + f'{shortlink.shortlink}'},)
         except ObjectDoesNotExist:
-            return Response({'status': 'Такого рецепта не существует.'})
+            return Response({'status': 'Такой короткой ссылки не существует.'})
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):

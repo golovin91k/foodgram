@@ -95,10 +95,6 @@ class RecipeUserBaseModel(models.Model):
 
     class Meta:
         abstract = True
-        constraints = [
-            models.UniqueConstraint(fields=['recipe', 'user'],
-                                    name='unique_together')
-        ]
 
     def __str__(self):
         return f'{self.recipe} - {self.user}'
@@ -110,6 +106,11 @@ class FavoriteRecipe(RecipeUserBaseModel):
     class Meta:
         verbose_name = 'Избранный рецепт'
         verbose_name_plural = 'Избранные рецепты'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_favorite')
+        ]
 
 
 class ShoppingCart(RecipeUserBaseModel):
@@ -118,6 +119,11 @@ class ShoppingCart(RecipeUserBaseModel):
     class Meta:
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Списки покупок'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_shopping_cart')
+        ]
 
 
 class Subscription(models.Model):
@@ -133,8 +139,9 @@ class Subscription(models.Model):
         verbose_name = 'Список подписок'
         verbose_name_plural = 'Списки подписок'
         constraints = [
-            models.UniqueConstraint(fields=['author', 'subscriber'],
-                                    name='unique_favorite')
+            models.UniqueConstraint(
+                fields=['author', 'subscriber'],
+                name='unique_subscription')
         ]
 
     def clean(self):
