@@ -125,7 +125,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def add_shopping_cart_favorite(self, request, serializer):
         serializer.is_valid(raise_exception=True)
         serializer.save(user=request.user)
-        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=(IsAuthenticated,))
