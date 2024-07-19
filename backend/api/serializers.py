@@ -268,12 +268,13 @@ class SubscribeReturnSerializer(SpecialUserSerializer):
         author_recipes = Recipe.objects.filter(author=obj)
         request_recipes_limit = self.context.get('request').GET
         recipes_limit = request_recipes_limit.get('recipes_limit')
-        if recipes_limit is not None and isinstance(recipes_limit, int):
-            try:
+        try:
+            if recipes_limit is not None and isinstance(
+                    int(recipes_limit), int):
                 author_recipes = author_recipes[:int(recipes_limit)]
-            except serializers.ValidationError:
-                raise serializers.ValidationError(
-                    'Значение recipes_limit должно быть числом.')
+        except ValueError:
+            raise serializers.ValidationError(
+                'Значение recipes_limit должно быть числом.')
         return ShortRecipeSerializer(
             author_recipes, many=True, read_only=True).data
 
