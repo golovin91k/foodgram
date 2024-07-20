@@ -97,6 +97,7 @@ class CustomUserViewSet(UserViewSet):
         # Не знаю, как это улучшить. Нужна подсказка или образец.
         # Очень тяжело даются запросы к связанным моделям.
         # Нельзя так оставить?
+        
         subscription_objs = Subscription.objects.select_related(
             'author').all().filter(subscriber=self.request.user)
         authors_queryset = []
