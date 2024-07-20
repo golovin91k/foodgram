@@ -22,7 +22,7 @@ from .serializers import (
     FavoriteRecipeCreateSerializer)
 from recipes.models import (
     Recipe, Ingredient, Tag, ShortLink,
-    Subscription, IngredientInRecipe)
+    IngredientInRecipe)
 from .pagination import CustomPaginator
 from .permissions import IsCurrentUserOrAdminOrReadOnly
 from .filters import RecipeFilter
@@ -94,15 +94,8 @@ class CustomUserViewSet(UserViewSet):
             permission_classes=[IsAuthenticated],
             pagination_class=CustomPaginator)
     def subscriptions(self, request):
-        # Не знаю, как это улучшить. Нужна подсказка или образец.
-        # Очень тяжело даются запросы к связанным моделям.
-        # Нельзя так оставить?
-        
-        subscription_objs = Subscription.objects.select_related(
-            'author').all().filter(subscriber=self.request.user)
-        authors_queryset = []
-        for obj in subscription_objs:
-            authors_queryset.append(obj.author)
+        authors_queryset = User.objects.filter(
+            subscribers__in=request.user.sub_authors.all())
         paginate_user_subscriptions = self.paginate_queryset(authors_queryset)
         serializer = SubscribeReturnSerializer(
             paginate_user_subscriptions,
